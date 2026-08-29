@@ -66,6 +66,26 @@ export type Payment = {
   method: string;
 };
 
+export type Staff = {
+  id: string;
+  name: string;
+  role: string; // designation e.g. "Teacher", "Administrator"
+  department: string;
+  email?: string;
+  phone?: string;
+  joined?: string; // YYYY-MM-DD
+  status: "active" | "on_leave" | "inactive";
+};
+
+export type LeaveRequest = {
+  id: string;
+  staff_id: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -73,6 +93,8 @@ const col = {
   marks: () => collection(db!, "marks"),
   attendance: () => collection(db!, "attendance"),
   payments: () => collection(db!, "payments"),
+  staff: () => collection(db!, "staff"),
+  leaves: () => collection(db!, "leave_requests"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -241,4 +263,51 @@ export async function deleteMark(id: string) {
 export async function subjectNames(): Promise<Record<string, string>> {
   const subjects = await listSubjects();
   return Object.fromEntries(subjects.map((s) => [s.id, s.name]));
+}
+
+export async function listStaff(): Promise<Staff[]> {
+  const q = query(col.staff(), orderBy("name"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...(d.data() as Staff), id: d.id }));
+}
+
+export async function getStaff(id: string): Promise<Staff | null> {
+  const snap = await getDoc(doc(db!, "staff", id));
+  return snap.exists() ? ({ ...(snap.data() as Staff), id: snap.id } as Staff) : null;
+}
+
+export async function addStaff(data: Omit<Staff, "id">) {
+  const ref = doc(col.staff());
+  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateStaff(id: string, data: Partial<Staff>) {
+  await updateDoc(doc(db!, "staff", id), data);
+}
+
+export async function deleteStaff(id: string) {
+  await deleteDoc(doc(db!, "staff", id));
+}
+
+/** Resolve staff names to a map of id → name. */
+export async function staffNames(): Promise<Record<string, string>> {
+  const staff = await listStaff();
+  return Object.fromEntries(staff.map((s) => [s.id, s.name]));
+}
+
+export async function listLeaves(): Promise<LeaveRequest[]> {
+  const q = query(col.leaves(), orderBy("start_date", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...(d.data() as LeaveRequest), id: d.id }));
+}
+
+export async function addLeave(data: Omit<LeaveRequest, "id">) {
+  const ref = doc(col.leaves());
+  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateLeave(id: string, data: Partial<LeaveRequest>) {
+  await updateDoc(doc(db!, "leave_requests", id), data);
 }
