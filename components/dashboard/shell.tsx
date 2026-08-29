@@ -5,23 +5,31 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { NAV_ITEMS } from "@/components/dashboard/nav";
+import { isRestrictedFor, navItemsFor, NAV_ITEMS } from "@/components/dashboard/nav";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth!, (user) => {
       if (!user) router.replace("/");
+      setEmail(user?.email ?? null);
       setReady(true);
     });
     return () => unsub();
   }, [router]);
 
+  useEffect(() => {
+    if (email && isRestrictedFor(email, pathname)) router.replace("/dashboard");
+  }, [email, pathname, router]);
+
   if (!ready) return null;
+
+  const items = navItemsFor(email);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -33,7 +41,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell />
-          <MobileNav pathname={pathname} />
+          <MobileNav pathname={pathname} items={items} />
           <LogoutButton onLogout={() => router.replace("/")} />
         </div>
       </div>
@@ -55,7 +63,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="space-y-1 flex-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const active =
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -105,7 +113,7 @@ function LogoutButton({ onLogout, wide }: { onLogout: () => void; wide?: boolean
   );
 }
 
-function MobileNav({ pathname }: { pathname: string }) {
+function MobileNav({ pathname, items }: { pathname: string; items: typeof NAV_ITEMS }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -119,7 +127,7 @@ function MobileNav({ pathname }: { pathname: string }) {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <nav className="absolute right-0 top-full mt-2 w-56 glass-panel p-2 z-50 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {items.map((item) => {
               const active =
                 pathname === item.href ||
                 (item.href !== "/dashboard" && pathname.startsWith(item.href));
