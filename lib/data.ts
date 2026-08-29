@@ -254,6 +254,30 @@ export type Vehicle = {
   services: VehicleService[];
 };
 
+export type SchoolSettings = {
+  id: string;
+  school_name: string;
+  school_address: string;
+  timezone: string;
+  currency: string;
+  primary_color: string;
+};
+
+export type FeeItem = {
+  name: string;
+  kind: string; // e.g. "Tuition Fee", "Transport Fee"
+  amount: number;
+  frequency: "Monthly" | "Quarterly" | "Annual";
+};
+
+export type FeeStructure = {
+  id: string;
+  class_id: string;
+  name: string;
+  academic_year: string;
+  fees: FeeItem[];
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -275,6 +299,7 @@ const col = {
   routes: () => collection(db!, "routes"),
   route_assignments: () => collection(db!, "route_assignments"),
   vehicles: () => collection(db!, "vehicles"),
+  fee_structures: () => collection(db!, "fee_structures"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -706,6 +731,48 @@ export async function logService(vehicleId: string, service: VehicleService) {
   const snap = await getDoc(ref);
   const cur = (snap.data() as Vehicle | undefined)?.services ?? [];
   await updateDoc(ref, { services: [...cur, service] });
+}
+
+const SETTINGS_DEFAULTS: Omit<SchoolSettings, "id"> = {
+  school_name: "Greenwood International School",
+  school_address: "123 Education Boulevard, Knowledge City",
+  timezone: "(GMT+05:30) India Standard Time",
+  currency: "INR (₹)",
+  primary_color: "#6366F1",
+};
+
+/** School-wide profile + branding settings. */
+export async function getSchoolSettings(): Promise<SchoolSettings> {
+  const snap = await getDoc(doc(db!, "settings", "school"));
+  if (!snap.exists()) return { id: "school", ...SETTINGS_DEFAULTS };
+  return { id: "school", ...SETTINGS_DEFAULTS, ...(snap.data() as Partial<SchoolSettings>) };
+}
+
+export async function updateSchoolSettings(data: Partial<SchoolSettings>) {
+  await setDoc(doc(db!, "settings", "school"), data, { merge: true });
+}
+
+/** Fee structures (templates applied per class / academic year). */
+export async function listFeeStructures(): Promise<FeeStructure[]> {
+  const snap = await getDocs(col.fee_structures());
+  return snap.docs.map((d) => {
+    const x = d.data() as FeeStructure;
+    return { ...x, id: d.id, fees: x.fees ?? [] };
+  });
+}
+
+export async function addFeeStructure(data: Omit<FeeStructure, "id">) {
+  const ref = doc(col.fee_structures());
+  await setDoc(ref, { ...data, fees: data.fees ?? [] });
+  return ref.id;
+}
+
+export async function updateFeeStructure(id: string, data: Partial<Omit<FeeStructure, "id">>) {
+  await updateDoc(doc(db!, "fee_structures", id), data);
+}
+
+export async function deleteFeeStructure(id: string) {
+  await deleteDoc(doc(db!, "fee_structures", id));
 }
 
 /** List all books in the catalog, ordered by title. */

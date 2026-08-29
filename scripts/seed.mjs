@@ -416,6 +416,36 @@ async function main() {
     await writeDoc(token, "route_assignments", a.id, a);
   }
 
+  // Settings: school profile + fee structures.
+  await writeDoc(token, "settings", "school", {
+    school_name: "Greenwood International School",
+    school_address: "123 Education Boulevard, Knowledge City",
+    timezone: "(GMT+05:30) India Standard Time",
+    currency: "INR (₹)",
+    primary_color: "#6366F1",
+  });
+  const structures = [
+    {
+      id: "fs_c9a_standard", class_id: "c9a", name: "Standard Academic Curriculum", academic_year: "2024 - 2025",
+      fees: [
+        { name: "Tuition Fee", kind: "Tuition Fee", amount: 1200, frequency: "Monthly" },
+        { name: "Transport Fee", kind: "Transport Fee", amount: 350, frequency: "Quarterly" },
+        { name: "Library Fee", kind: "Library Fee", amount: 150, frequency: "Annual" },
+      ],
+    },
+    {
+      id: "fs_c8a_board", class_id: "c8a", name: "Board Examination Year", academic_year: "2024 - 2025",
+      fees: [
+        { name: "Tuition Fee", kind: "Tuition Fee", amount: 1350, frequency: "Monthly" },
+        { name: "Lab Fee", kind: "Lab Fee", amount: 400, frequency: "Quarterly" },
+        { name: "Examination Fee", kind: "Exam Fee", amount: 500, frequency: "Annual" },
+      ],
+    },
+  ];
+  for (const s of structures) {
+    await writeDoc(token, "fee_structures", s.id, s);
+  }
+
   console.log(
     "Seeded:", classes.length, "classes,", students.length, "students,",
     subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
@@ -425,6 +455,7 @@ async function main() {
   console.log("Communications:", announcements.length, "announcements,", broadcasts.length, "broadcasts,", threads.length, "threads.");
   console.log("Hostel:", rooms.length, "rooms,", hostelFees.length, "fee records.");
   console.log("Transport:", vehicles.length, "vehicles,", routes.length, "routes,", assignments.length, "assignments.");
+  console.log("Settings:", structures.length, "fee structures.");
 }
 
 main().then(() => process.exit(0)).catch((e) => {
