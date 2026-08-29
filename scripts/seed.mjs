@@ -5,6 +5,9 @@ import { readFileSync } from "node:fs";
 
 const SEED_EMAIL = "admin@school.local";
 const SEED_PASS = "admin123!";
+// Separate staff/teacher login (also needs provisioning)
+const TEACHER_EMAIL = "teacher@school.local";
+const TEACHER_PASS = "teacher123!";
 
 const env = {};
 for (const line of readFileSync(".env.local", "utf8").split("\n")) {
@@ -15,26 +18,33 @@ for (const line of readFileSync(".env.local", "utf8").split("\n")) {
 const API_KEY = env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const PROJECT = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-async function authCall(path) {
+async function authCall(path, email, password) {
   const url = `https://identitytoolkit.googleapis.com/v1/${path}?key=${API_KEY}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: SEED_EMAIL, password: SEED_PASS, returnSecureToken: true }),
+    body: JSON.stringify({ email, password, returnSecureToken: true }),
   });
   const data = await res.json();
   if (!data.idToken) throw new Error(JSON.stringify(data));
   return data;
 }
 
-async function getToken() {
+async function ensureUser(email, password) {
   try {
-    return (await authCall("accounts:signInWithPassword")).idToken;
-  } catch (e) {
-    // Not created yet → create first, then sign in
-    await authCall("accounts:signUp").catch(() => {});
-    return (await authCall("accounts:signInWithPassword")).idToken;
+    await authCall("accounts:signInWithPassword", email, password);
+    return false;
+  } catch {
+    // Not created yet → create it
+    await authCall("accounts:signUp", email, password).catch(() => {});
+    return true;
   }
+}
+
+async function getToken() {
+  await ensureUser(SEED_EMAIL, SEED_PASS);
+  await ensureUser(TEACHER_EMAIL, TEACHER_PASS);
+  return (await authCall("accounts:signInWithPassword", SEED_EMAIL, SEED_PASS)).idToken;
 }
 
 function fields(obj) {
@@ -56,10 +66,11 @@ async function writeDoc(token, collectionPath, docId, data) {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ fields: fields(data) }),
   });
-  if (!res.ok) {
+  if (!res.ok && res.status !== 409) {
     const body = await res.text();
     throw new Error(`Write ${collectionPath}/${docId} failed (${res.status}): ${body}`);
   }
+  // 409 = doc already exists → skip (keeps seeding idempotent)
 }
 
 const classes = [
