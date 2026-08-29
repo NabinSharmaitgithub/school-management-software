@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   listMarks,
   addMark,
@@ -95,10 +96,19 @@ export default function MarksPage() {
           <h1 className="text-xl font-semibold">Marks & Gradebook</h1>
           <p className="text-sm text-on-surface/60">{marks.length} entries recorded</p>
         </div>
-        <GlassButton onClick={() => setAddOpen(true)}>
-          <span className="material-symbols-outlined text-lg">add</span>
-          Add Marks
-        </GlassButton>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/marks/bulk"
+            className="glass-btn-ghost inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+          >
+            <span className="material-symbols-outlined text-lg">grid_on</span>
+            Bulk Entry
+          </Link>
+          <GlassButton onClick={() => setAddOpen(true)}>
+            <span className="material-symbols-outlined text-lg">add</span>
+            Add Marks
+          </GlassButton>
+        </div>
       </header>
 
       <GlassCard className="p-4">

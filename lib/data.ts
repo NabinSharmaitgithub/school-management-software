@@ -49,6 +49,23 @@ export type Mark = {
   max_marks: number;
 };
 
+export type BulkMarkStatus = "marked" | "absent" | "exempt";
+
+export type BulkMarkEntry = {
+  student_id: string;
+  subject_id: string;
+  class_id: string;
+  section?: string;
+  exam_term: string;
+  academic_year: string;
+  max_marks: number;
+  marks_obtained?: number;
+  percentage?: number;
+  grade?: string;
+  status: BulkMarkStatus;
+  remarks?: string;
+};
+
 export type AttendanceEntry = {
   id: string;
   date: string; // YYYY-MM-DD
@@ -262,6 +279,17 @@ export async function addMark(data: Omit<Mark, "id">) {
   const ref = doc(col.marks());
   await setDoc(ref, data);
   return ref.id;
+}
+
+/** Upsert marks for a whole roster. Deterministic doc id per student+subject+term+year. */
+export async function bulkSetMarks(entries: BulkMarkEntry[]) {
+  await Promise.all(
+    entries.map((e) => {
+      const id = `${e.student_id}_${e.subject_id}_${e.exam_term}_${e.academic_year}`
+        .replace(/[^A-Za-z0-9._-]/g, "_");
+      return setDoc(doc(col.marks(), id), e);
+    })
+  );
 }
 
 export async function deleteMark(id: string) {
