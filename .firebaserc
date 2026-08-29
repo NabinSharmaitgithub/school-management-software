@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "school-mgmt-glass-2025"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

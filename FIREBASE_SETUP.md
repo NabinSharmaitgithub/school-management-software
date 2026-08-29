@@ -43,12 +43,10 @@ Enabled: Email/Password (`auth.providers.emailPassword: true` in firebase.json)
 
 Enable in Console: Authentication > Sign-in method > Email/Password → Enable
 
-Create teacher/admin user:
-```bash
-firebase auth:create-user --email teacher@school.local --password <pass>
-# or via SDK:
-createUserWithEmailAndPassword(auth, email, password)
-```
+**Seed admin login:** `admin@school.local` / `admin123!` — created by `node scripts/seed.mjs`.
+
+Seed data (optional): run `node scripts/seed.mjs` from repo root (reads `.env.local`) to
+populate demo classes/subjects/students/attendance/marks/payments via Firestore REST.
 
 ## 3. Hosting
 
