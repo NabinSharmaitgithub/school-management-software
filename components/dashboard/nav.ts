@@ -12,10 +12,29 @@ export const NAV_ITEMS = [
   { label: "Library", icon: "local_library", href: "/dashboard/library" },
   { label: "Transport", icon: "directions_bus", href: "/dashboard/transport" },
   { label: "Hostel", icon: "apartment", href: "/dashboard/hostel" },
+  { label: "Exam Schedules", icon: "event_note", href: "/dashboard/exam-schedules" },
+  { label: "Timetable", icon: "calendar_month", href: "/dashboard/timetable" },
+  { label: "Report Cards", icon: "description", href: "/dashboard/report-cards" },
+  { label: "ID Cards", icon: "credit_card", href: "/dashboard/id-cards" },
+  { label: "Analytics", icon: "query_stats", href: "/dashboard/analytics" },
+  { label: "Payroll", icon: "payments", href: "/dashboard/payroll" },
   { label: "Settings", icon: "settings", href: "/dashboard/settings" },
 ];
 
-const ADMIN_ONLY = ["/dashboard/staff", "/dashboard/assignments", "/dashboard/finance", "/dashboard/library", "/dashboard/transport", "/dashboard/hostel"];
+const ADMIN_ONLY = [
+  "/dashboard/staff",
+  "/dashboard/assignments",
+  "/dashboard/finance",
+  "/dashboard/library",
+  "/dashboard/transport",
+  "/dashboard/hostel",
+  "/dashboard/exam-schedules",
+  "/dashboard/timetable",
+  "/dashboard/report-cards",
+  "/dashboard/id-cards",
+  "/dashboard/analytics",
+  "/dashboard/payroll",
+];
 
 export function navItemsFor(email?: string | null) {
   const isTeacher = email === "teacher@school.local";

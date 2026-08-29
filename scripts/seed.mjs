@@ -446,6 +446,72 @@ async function main() {
     await writeDoc(token, "fee_structures", s.id, s);
   }
 
+  // ── High-value screens: staff, exams, payslips, timetable ──────────
+  const staffList = [
+    ["st_1", "Ramesh Adhikari", "Mathematics Teacher", "Mathematics", "active"],
+    ["st_2", "Priya Shrestha", "English Teacher", "English", "active"],
+    ["st_3", "David Shrestha", "Science Teacher", "Science", "active"],
+    ["st_4", "Sunita Karki", "Administrator", "Administration", "active"],
+  ];
+  for (const [id, name, role, department, status] of staffList) {
+    await writeDoc(token, "staff", id, {
+      name, role, department,
+      email: `${id}@school.edu`, phone: "98", joined: "2020-04-01", status,
+    });
+  }
+
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const prevMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+  const payslips = [
+    ["ps_1", "st_1", currentMonth],
+    ["ps_2", "st_2", currentMonth],
+    ["ps_3", "st_3", currentMonth],
+    ["ps_4", "st_4", prevMonth],
+  ];
+  for (const [id, staffId, month] of payslips) {
+    const s = staffList.find((x) => x[0] === staffId);
+    await writeDoc(token, "payslips", id, {
+      staff_id: staffId,
+      staff_name: s[1],
+      department: s[3],
+      month,
+      basic: 45000,
+      allowances: 8500,
+      deductions: 5200,
+      status: id === "ps_4" ? "paid" : "pending",
+      payment_date: id === "ps_4" ? new Date().toISOString().slice(0, 10) : null,
+    });
+  }
+
+  await writeDoc(token, "exams", "exam_midterm_2026", {
+    name: "Mid-Term 2026", academic_year: "2025 - 2026",
+  });
+  const sessions = [
+    ["exs_1", "exam_midterm_2026", "subj_math", ["c7a", "c8a"], "2026-10-05", "09:00", "11:00", "Hall A", "Ramesh Adhikari"],
+    ["exs_2", "exam_midterm_2026", "subj_eng", ["c7a"], "2026-10-06", "09:00", "11:00", "Room 12", "Priya Shrestha"],
+    ["exs_3", "exam_midterm_2026", "subj_sci", ["c9a"], "2026-10-07", "09:00", "11:30", "Hall A", null],
+  ];
+  for (const [id, examId, subjectId, classIds, date, start, end, room, invigilator] of sessions) {
+    await writeDoc(token, "exam_sessions", id, {
+      exam_id: examId, subject_id: subjectId, class_ids: classIds,
+      date, start, end, room, invigilator,
+    });
+  }
+
+  const timetable = [
+    ["tt_1", "c7a", "subj_math", "Ramesh Adhikari", "Mon", "08:00", "08:45", "Room 21"],
+    ["tt_2", "c7a", "subj_eng", "Priya Shrestha", "Mon", "09:00", "09:45", "Room 21"],
+    ["tt_3", "c7a", "subj_sci", "David Shrestha", "Tue", "08:00", "08:45", "Lab 2"],
+    ["tt_4", "c8a", "subj_sci", "David Shrestha", "Mon", "08:00", "08:45", "Lab 2"],
+    ["tt_5", "c8a", "subj_math", "Ramesh Adhikari", "Tue", "09:00", "09:45", "Room 14"],
+    ["tt_6", "c9a", "subj_eng", "Priya Shrestha", "Wed", "08:00", "08:45", "Room 30"],
+  ];
+  for (const [id, classId, subjectId, teacher, day, start, end, room] of timetable) {
+    await writeDoc(token, "timetable", id, {
+      class_id: classId, subject_id: subjectId, teacher, day, start, end, room,
+    });
+  }
+
   console.log(
     "Seeded:", classes.length, "classes,", students.length, "students,",
     subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
@@ -456,6 +522,8 @@ async function main() {
   console.log("Hostel:", rooms.length, "rooms,", hostelFees.length, "fee records.");
   console.log("Transport:", vehicles.length, "vehicles,", routes.length, "routes,", assignments.length, "assignments.");
   console.log("Settings:", structures.length, "fee structures.");
+  console.log("Staff/HR:", staffList.length, "staff,", payslips.length, "payslips.");
+  console.log("Academics:", 1, "exam,", sessions.length, "sessions,", timetable.length, "timetable entries.");
 }
 
 main().then(() => process.exit(0)).catch((e) => {

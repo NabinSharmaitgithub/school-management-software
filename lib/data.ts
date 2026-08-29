@@ -10,6 +10,7 @@ import {
   orderBy,
   where,
   serverTimestamp,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -278,6 +279,48 @@ export type FeeStructure = {
   fees: FeeItem[];
 };
 
+export type Exam = {
+  id: string;
+  name: string; // e.g. "Mid-Term 2026"
+  academic_year: string;
+};
+
+export type ExamSession = {
+  id: string;
+  exam_id: string;
+  subject_id: string;
+  class_ids: string[];
+  date: string; // YYYY-MM-DD
+  start: string; // "09:00"
+  end: string; // "12:00"
+  room: string;
+  invigilator?: string;
+};
+
+export type Payslip = {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  department: string;
+  month: string; // "2024-10"
+  basic: number;
+  allowances: number;
+  deductions: number;
+  status: "paid" | "pending";
+  payment_date?: string;
+};
+
+export type TimetableEntry = {
+  id: string;
+  class_id: string;
+  subject_id: string;
+  teacher: string;
+  day: string; // "Mon".."Sat"
+  start: string; // "08:00"
+  end: string; // "08:45"
+  room?: string;
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -300,6 +343,10 @@ const col = {
   route_assignments: () => collection(db!, "route_assignments"),
   vehicles: () => collection(db!, "vehicles"),
   fee_structures: () => collection(db!, "fee_structures"),
+  exams: () => collection(db!, "exams"),
+  exam_sessions: () => collection(db!, "exam_sessions"),
+  payslips: () => collection(db!, "payslips"),
+  timetable: () => collection(db!, "timetable"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -773,6 +820,97 @@ export async function updateFeeStructure(id: string, data: Partial<Omit<FeeStruc
 
 export async function deleteFeeStructure(id: string) {
   await deleteDoc(doc(db!, "fee_structures", id));
+}
+
+/** All attendance records (for reports/analytics). */
+export async function listAttendance(): Promise<AttendanceEntry[]> {
+  const snap = await getDocs(col.attendance());
+  return snap.docs.map((d) => ({ ...(d.data() as AttendanceEntry), id: d.id }));
+}
+
+/** Exam definitions (selector) and their scheduled sessions. */
+export async function listExams(): Promise<Exam[]> {
+  const snap = await getDocs(col.exams());
+  return snap.docs.map((d) => ({ ...(d.data() as Exam), id: d.id }));
+}
+
+export async function addExam(data: Omit<Exam, "id">) {
+  const ref = doc(col.exams());
+  await setDoc(ref, data);
+  return ref.id;
+}
+
+export async function listExamSessions(): Promise<ExamSession[]> {
+  const snap = await getDocs(col.exam_sessions());
+  return snap.docs.map((d) => ({ ...(d.data() as ExamSession), id: d.id }));
+}
+
+export async function addExamSession(data: Omit<ExamSession, "id">) {
+  const ref = doc(col.exam_sessions());
+  const clean: Record<string, unknown> = { ...data, class_ids: data.class_ids ?? [] };
+  Object.keys(clean).forEach((k) => clean[k] === undefined && delete clean[k]);
+  await setDoc(ref, clean);
+  return ref.id;
+}
+
+export async function deleteExamSession(id: string) {
+  await deleteDoc(doc(db!, "exam_sessions", id));
+}
+
+/** Payroll: monthly payslips per staff member. */
+export async function getPayslips(): Promise<Payslip[]> {
+  const snap = await getDocs(col.payslips());
+  return snap.docs.map((d) => ({ ...(d.data() as Payslip), id: d.id }));
+}
+
+/** Create a pending payslip for every active staff member without one in `month`. */
+export async function generatePayroll(month: string): Promise<number> {
+  const staff = await listStaff();
+  const slips = await getPayslips();
+  const have = new Set(slips.filter((p) => p.month === month).map((p) => p.staff_id));
+  let created = 0;
+  for (const s of staff) {
+    if (have.has(s.id) || s.status !== "active") continue;
+    await setDoc(doc(col.payslips()), {
+      staff_id: s.id,
+      staff_name: s.name,
+      department: s.department,
+      month,
+      basic: 45000,
+      allowances: 8500,
+      deductions: 5200,
+      status: "pending",
+    });
+    created++;
+  }
+  return created;
+}
+
+export async function updatePayslipStatus(id: string, status: Payslip["status"]) {
+  await updateDoc(doc(db!, "payslips", id), {
+    status,
+    payment_date: status === "paid" ? new Date().toISOString().slice(0, 10) : deleteField(),
+  });
+}
+
+/** Weekly timetable: one entry per class.slot (period). */
+export async function listTimetable(): Promise<TimetableEntry[]> {
+  const snap = await getDocs(col.timetable());
+  return snap.docs.map((d) => ({ ...(d.data() as TimetableEntry), id: d.id }));
+}
+
+export async function addTimetableEntry(data: Omit<TimetableEntry, "id">) {
+  const ref = doc(col.timetable());
+  await setDoc(ref, { ...data, room: data.room ?? "" });
+  return ref.id;
+}
+
+export async function updateTimetableEntry(id: string, data: Partial<Omit<TimetableEntry, "id">>) {
+  await updateDoc(doc(db!, "timetable", id), data);
+}
+
+export async function deleteTimetableEntry(id: string) {
+  await deleteDoc(doc(db!, "timetable", id));
 }
 
 /** List all books in the catalog, ordered by title. */
