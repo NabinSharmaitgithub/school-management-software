@@ -209,6 +209,51 @@ export type HostelFee = {
   paid_date?: string; // set once collected
 };
 
+export type BusStop = {
+  name: string;
+  stop_time: string; // e.g. "8:00 AM"
+};
+
+export type Route = {
+  id: string;
+  name: string;
+  bus_id?: string;
+  driver_name?: string;
+  capacity: number; // max students
+  stops: BusStop[];
+  status: "active" | "delayed";
+};
+
+export type RouteAssignment = {
+  id: string;
+  student_id: string;
+  route_id?: string;
+  pickup_stop?: string;
+  drop_stop?: string;
+  monthly_fee: number;
+  status: "pending" | "draft" | "assigned" | "conflict";
+};
+
+export type VehicleService = {
+  date: string; // YYYY-MM-DD
+  type: string;
+  cost: number;
+};
+
+export type Vehicle = {
+  id: string;
+  vehicle_no: string; // e.g. "BUS-42"
+  plate: string;
+  status: "active" | "maintenance";
+  capacity_seats: number;
+  route_id?: string;
+  driver_name?: string;
+  driver_phone?: string;
+  insurance_expiry: string; // YYYY-MM-DD
+  permit_expiry: string; // YYYY-MM-DD
+  services: VehicleService[];
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -227,6 +272,9 @@ const col = {
   threads: () => collection(db!, "threads"),
   rooms: () => collection(db!, "rooms"),
   hostel_fees: () => collection(db!, "hostel_fees"),
+  routes: () => collection(db!, "routes"),
+  route_assignments: () => collection(db!, "route_assignments"),
+  vehicles: () => collection(db!, "vehicles"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -588,6 +636,76 @@ export async function collectHostelFee(id: string, method: string) {
     date: new Date().toISOString().slice(0, 10),
     method,
   });
+}
+
+/** All transport routes. */
+export async function listRoutes(): Promise<Route[]> {
+  const snap = await getDocs(col.routes());
+  return snap.docs.map((d) => {
+    const r = d.data() as Route;
+    return { ...r, id: d.id, stops: r.stops ?? [] };
+  });
+}
+
+export async function addRoute(data: Omit<Route, "id">) {
+  const ref = doc(col.routes());
+  await setDoc(ref, { ...data, stops: data.stops ?? [] });
+  return ref.id;
+}
+
+export async function deleteRoute(id: string) {
+  await deleteDoc(doc(db!, "routes", id));
+}
+
+/** All route assignments (bus ridership per student). */
+export async function listRouteAssignments(): Promise<RouteAssignment[]> {
+  const snap = await getDocs(col.route_assignments());
+  return snap.docs.map((d) => ({ ...(d.data() as RouteAssignment), id: d.id }));
+}
+
+/** Pick a route + stops for one student's transport record. */
+export async function updateAssignment(
+  id: string,
+  data: Partial<Pick<RouteAssignment, "route_id" | "pickup_stop" | "drop_stop" | "monthly_fee" | "status">>
+) {
+  await updateDoc(doc(db!, "route_assignments", id), data);
+}
+
+export async function addAssignment(data: Omit<RouteAssignment, "id">) {
+  const ref = doc(col.route_assignments());
+  await setDoc(ref, data);
+  return ref.id;
+}
+
+export async function deleteAssignment(id: string) {
+  await deleteDoc(doc(db!, "route_assignments", id));
+}
+
+/** All transport vehicles. */
+export async function listVehicles(): Promise<Vehicle[]> {
+  const snap = await getDocs(col.vehicles());
+  return snap.docs.map((d) => {
+    const v = d.data() as Vehicle;
+    return { ...v, id: d.id, services: v.services ?? [] };
+  });
+}
+
+export async function addVehicle(data: Omit<Vehicle, "id" | "services">) {
+  const ref = doc(col.vehicles());
+  await setDoc(ref, { ...data, services: [] });
+  return ref.id;
+}
+
+export async function deleteVehicle(id: string) {
+  await deleteDoc(doc(db!, "vehicles", id));
+}
+
+/** Append a maintenance-log entry to a vehicle's service history. */
+export async function logService(vehicleId: string, service: VehicleService) {
+  const ref = doc(db!, "vehicles", vehicleId);
+  const snap = await getDoc(ref);
+  const cur = (snap.data() as Vehicle | undefined)?.services ?? [];
+  await updateDoc(ref, { services: [...cur, service] });
 }
 
 /** List all books in the catalog, ordered by title. */

@@ -324,6 +324,98 @@ async function main() {
     await writeDoc(token, "hostel_fees", f.id, f);
   }
 
+  // Transport: vehicles, routes, and per-student route assignments.
+  const fmtDate = (d) => d.toISOString().slice(0, 10);
+  const vehicles = [
+    {
+      id: "v_bus42", vehicle_no: "BUS-42", plate: "ABC-1234", status: "active",
+      capacity_seats: 72, route_id: "r_north", driver_name: "John Smith", driver_phone: "555-0192",
+      insurance_expiry: fmtDate(new Date(Date.now() + 56 * 86400000)),
+      permit_expiry: fmtDate(new Date(Date.now() + 120 * 86400000)),
+      services: [
+        { date: fmtDate(new Date(Date.now() - 100 * 86400000)), type: "Oil Change", cost: 125 },
+        { date: fmtDate(new Date(Date.now() - 45 * 86400000)), type: "Brake Pads", cost: 450 },
+      ],
+    },
+    {
+      id: "v_bus15", vehicle_no: "BUS-15", plate: "XYZ-9876", status: "maintenance",
+      capacity_seats: 52, route_id: null,
+      insurance_expiry: fmtDate(new Date(Date.now() + 200 * 86400000)),
+      permit_expiry: fmtDate(new Date(Date.now() - 10 * 86400000)),
+      services: [
+        { date: fmtDate(new Date(Date.now() - 6 * 86400000)), type: "Engine Repair", cost: 900 },
+      ],
+    },
+    {
+      id: "v_bus08", vehicle_no: "BUS-08", plate: "LMN-4567", status: "active",
+      capacity_seats: 36, route_id: "r_east", driver_name: "Maria Rodriguez", driver_phone: "555-0211",
+      insurance_expiry: fmtDate(new Date(Date.now() + 400 * 86400000)),
+      permit_expiry: fmtDate(new Date(Date.now() + 90 * 86400000)),
+      services: [
+        { date: fmtDate(new Date(Date.now() - 200 * 86400000)), type: "Annual Inspection", cost: 85 },
+      ],
+    },
+  ];
+  for (const v of vehicles) {
+    await writeDoc(token, "vehicles", v.id, v);
+  }
+
+  const routes = [
+    {
+      id: "r_north", name: "North Campus Express", bus_id: "v_bus42", driver_name: "John Smith",
+      capacity: 72, status: "active",
+      stops: [
+        { name: "Main St & 4th", stop_time: "7:45 AM" },
+        { name: "Oakwood Park", stop_time: "8:00 AM" },
+        { name: "Community Center", stop_time: "8:10 AM" },
+        { name: "School Gate A", stop_time: "8:20 AM" },
+      ],
+    },
+    {
+      id: "r_south", name: "South Valley Route", bus_id: "v_bus15", driver_name: "Sarah Jenkins",
+      capacity: 52, status: "delayed",
+      stops: [
+        { name: "Riverside Junction", stop_time: "7:50 AM" },
+        { name: "Hilltop View", stop_time: "8:05 AM" },
+        { name: "School Gate B", stop_time: "8:25 AM" },
+      ],
+    },
+    {
+      id: "r_east", name: "Eastside Loop", bus_id: "v_bus08", driver_name: "Michael Chang",
+      capacity: 36, status: "active",
+      stops: [
+        { name: "Oakwood Park", stop_time: "7:40 AM" },
+        { name: "Liberty Court", stop_time: "7:55 AM" },
+        { name: "School Gate A", stop_time: "8:15 AM" },
+      ],
+    },
+  ];
+  for (const r of routes) {
+    await writeDoc(token, "routes", r.id, r);
+  }
+
+  const assignments = [
+    {
+      id: "a_s1", student_id: "s_1", route_id: "r_north", pickup_stop: "Main St & 4th",
+      drop_stop: "School Gate A", monthly_fee: 50, status: "assigned",
+    },
+    {
+      id: "a_s2", student_id: "s_2", route_id: "r_east", pickup_stop: "Liberty Court",
+      drop_stop: "School Gate A", monthly_fee: 45, status: "draft",
+    },
+    {
+      id: "a_s3", student_id: "s_3", route_id: null, pickup_stop: null, drop_stop: "School Gate B",
+      monthly_fee: 50, status: "pending",
+    },
+    {
+      id: "a_s4", student_id: "s_4", route_id: "r_east", pickup_stop: "Oakwood Park",
+      drop_stop: "School Gate A", monthly_fee: 45, status: "conflict",
+    },
+  ];
+  for (const a of assignments) {
+    await writeDoc(token, "route_assignments", a.id, a);
+  }
+
   console.log(
     "Seeded:", classes.length, "classes,", students.length, "students,",
     subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
@@ -332,6 +424,7 @@ async function main() {
   console.log("Library:", books.length, "books,", loans.length, "loans.");
   console.log("Communications:", announcements.length, "announcements,", broadcasts.length, "broadcasts,", threads.length, "threads.");
   console.log("Hostel:", rooms.length, "rooms,", hostelFees.length, "fee records.");
+  console.log("Transport:", vehicles.length, "vehicles,", routes.length, "routes,", assignments.length, "assignments.");
 }
 
 main().then(() => process.exit(0)).catch((e) => {
