@@ -6,16 +6,19 @@ import {
   listMarks,
   addMark,
   deleteMark,
+  listStudents,
   studentNames,
   subjectNames,
 } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
+import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 type Mark = { id: string; student_id: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number };
 
 const TERMS = ["Mid-term", "Final", "Unit Test", "Practical"];
 
 export default function MarksPage() {
+  const scope = useTeacherScope();
   const [marks, setMarks] = useState<Mark[]>([]);
   const [students, setStudents] = useState<Record<string, string>>({});
   const [subjects, setSubjects] = useState<Record<string, string>>({});
@@ -35,7 +38,17 @@ export default function MarksPage() {
   async function load() {
     try {
       const [m, s, subj] = await Promise.all([listMarks(), studentNames(), subjectNames()]);
-      setMarks(m);
+      let visible = m;
+      if (!scope.isAdmin) {
+        const studs = await listStudents();
+        const classOf: Record<string, string> = {};
+        for (const st of studs) classOf[st.id] = st.class_id;
+        visible = m.filter((mk) => {
+          const cid = classOf[mk.student_id];
+          return !!cid && scope.subjectByClass[cid]?.includes(mk.subject_id);
+        });
+      }
+      setMarks(visible);
       setStudents(s);
       setSubjects(subj);
     } finally {
@@ -44,8 +57,8 @@ export default function MarksPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (scope.ready) load();
+  }, [scope.ready]);
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -104,15 +117,17 @@ export default function MarksPage() {
             <span className="material-symbols-outlined text-lg">grid_on</span>
             Bulk Entry
           </Link>
-          <GlassButton onClick={() => setAddOpen(true)}>
-            <span className="material-symbols-outlined text-lg">add</span>
-            Add Marks
-          </GlassButton>
+          {scope.isAdmin && (
+            <GlassButton onClick={() => setAddOpen(true)}>
+              <span className="material-symbols-outlined text-lg">add</span>
+              Add Marks
+            </GlassButton>
+          )}
         </div>
       </header>
 
       <GlassCard className="p-4">
-        {loading ? (
+        {loading || !scope.ready ? (
           <p className="text-sm text-on-surface/60 py-8 text-center">Loading…</p>
         ) : marks.length === 0 ? (
           <p className="text-sm text-on-surface/60 py-8 text-center">

@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { listStudents, deleteStudent, classNames } from "@/lib/data";
 import { GlassButton, GlassCard, Modal, StatusPill } from "@/components/ui";
+import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 export default function StudentsPage() {
+  const scope = useTeacherScope();
   const [students, setStudents] = useState<Awaited<ReturnType<typeof listStudents>>>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
@@ -30,15 +32,23 @@ export default function StudentsPage() {
     load();
   }, []);
 
+  const visible = useMemo(
+    () =>
+      scope.isAdmin
+        ? students
+        : students.filter((s) => scope.classIds.includes(s.class_id)),
+    [students, scope]
+  );
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return students;
-    return students.filter(
+    if (!term) return visible;
+    return visible.filter(
       (s) =>
         s.name.toLowerCase().includes(term) ||
         s.roll_number.toLowerCase().includes(term)
     );
-  }, [students, q]);
+  }, [visible, q]);
 
   async function onDelete() {
     if (!active) return;
@@ -52,14 +62,20 @@ export default function StudentsPage() {
       <header className="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Students</h1>
-          <p className="text-sm text-on-surface/60">{filtered.length} students</p>
+          <p className="text-sm text-on-surface/60">
+            {scope.isAdmin
+              ? `${filtered.length} students`
+              : `Your class${scope.classIds.length !== 1 ? "es" : ""} · ${filtered.length} students`}
+          </p>
         </div>
-        <Link href="/dashboard/students/new">
-          <GlassButton>
-            <span className="material-symbols-outlined text-lg">add</span>
-            Add Student
-          </GlassButton>
-        </Link>
+        {scope.isAdmin && (
+          <Link href="/dashboard/students/new">
+            <GlassButton>
+              <span className="material-symbols-outlined text-lg">add</span>
+              Add Student
+            </GlassButton>
+          </Link>
+        )}
       </header>
 
       {error && (
@@ -79,13 +95,15 @@ export default function StudentsPage() {
           />
         </div>
 
-        {loading ? (
+        {loading || !scope.ready ? (
           <p className="text-sm text-on-surface/60 py-8 text-center">Loading students…</p>
         ) : filtered.length === 0 ? (
           <p className="text-sm text-on-surface/60 py-8 text-center">
-            {students.length === 0
-              ? "No students yet. Click “Add Student” to create one."
-              : "No students match your search."}
+            {!scope.isAdmin && visible.length === 0
+              ? "No classes assigned to you yet. Ask an admin to assign you as class teacher."
+              : students.length === 0
+                ? "No students yet. Click “Add Student” to create one."
+                : "No students match your search."}
           </p>
         ) : (
           <table className="w-full text-sm">

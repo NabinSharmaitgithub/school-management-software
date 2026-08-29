@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { listClasses, studentsInClass, attendanceFor, setAttendance } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Select } from "@/components/ui";
+import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 type Class = { id: string; name: string; section: string };
 type Student = { id: string; name: string; roll_number: string };
@@ -13,6 +14,7 @@ function today() {
 }
 
 export default function AttendancePage() {
+  const scope = useTeacherScope();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [classId, setClassId] = useState("");
@@ -24,8 +26,12 @@ export default function AttendancePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    listClasses().then(setClasses).catch(() => {});
-  }, []);
+    listClasses()
+      .then((all) =>
+        setClasses(scope.isAdmin ? all : all.filter((c) => scope.classIds.includes(c.id)))
+      )
+      .catch(() => {});
+  }, [scope]);
 
   // Load students + existing records when class or date changes
   useEffect(() => {
@@ -146,9 +152,13 @@ export default function AttendancePage() {
             </div>
           )}
 
-          {loading ? (
+          {loading || !scope.ready ? (
             <p className="text-sm text-on-surface/60 py-8 text-center">
-              {classId ? "Loading students…" : "Select a class to begin."}
+              {classId ? "Loading students…" : "Loading…"}
+            </p>
+          ) : !scope.isAdmin && scope.classIds.length === 0 ? (
+            <p className="text-sm text-on-surface/60 py-8 text-center">
+              No classes assigned to you yet. Ask an admin to assign you as class teacher.
             </p>
           ) : classId && students.length === 0 ? (
             <p className="text-sm text-on-surface/60 py-8 text-center">

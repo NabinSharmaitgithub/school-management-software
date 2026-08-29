@@ -140,9 +140,25 @@ async function main() {
     });
   }
 
+  // Teacher role assignments: teacher@school.local is class teacher of Grade 7-A
+  // and subject teacher for Mathematics (7-A) and Science (8-A).
+  await writeDoc(token, "assignments", "ct_c7a", {
+    type: "class_teacher", class_id: "c7a", email: TEACHER_EMAIL, name: "Teacher login",
+  });
+  for (const [classId, subjectId] of [
+    ["c7a", "subj_math"],
+    ["c8a", "subj_sci"],
+  ]) {
+    await writeDoc(token, "assignments", `st_${classId}_${subjectId}`, {
+      type: "subject_teacher", class_id: classId, subject_id: subjectId,
+      email: TEACHER_EMAIL, name: "Teacher login",
+    });
+  }
+
   console.log(
     "Seeded:", classes.length, "classes,", students.length, "students,",
-    subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments."
+    subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
+    + " teacher assignments."
   );
 }
 

@@ -9,6 +9,7 @@ import {
 } from "@/lib/data";
 import type { BulkMarkStatus, Class, Subject, Student } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Select, StatusPill } from "@/components/ui";
+import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 const TERMS = ["Mid-term", "Final", "Unit Test", "Practical", "Internal Assessment"];
 const YEARS = (() => {
@@ -46,6 +47,7 @@ function validateMarks(marks: string, max: number): string {
 }
 
 export default function BulkMarksPage() {
+  const scope = useTeacherScope();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [academicYear, setAcademicYear] = useState(YEARS[1]);
@@ -63,15 +65,23 @@ export default function BulkMarksPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!scope.ready) return;
     Promise.all([listClasses(), listSubjects()])
       .then(([c, s]) => {
-        setClasses(c);
+        const allowedClasses = scope.isAdmin
+          ? c
+          : c.filter((x) => Object.keys(scope.subjectByClass).includes(x.id));
+        setClasses(allowedClasses);
         setSubjects(s);
-        setGrade(c[0]?.name ?? "");
-        if (c[0]) setSection(c.filter((x) => x.name === c[0].name)[0]?.section ?? "");
+        setGrade(allowedClasses[0]?.name ?? "");
+        setSection(
+          allowedClasses[0]
+            ? allowedClasses.filter((x) => x.name === allowedClasses[0].name)[0]?.section ?? ""
+            : ""
+        );
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [scope]);
 
   const gradeSections = useMemo(
     () => Array.from(new Set(classes.filter((c) => c.name === grade).map((c) => c.section))),
@@ -82,6 +92,19 @@ export default function BulkMarksPage() {
     () => classes.find((c) => c.name === grade && c.section === section)?.id ?? "",
     [classes, grade, section]
   );
+
+  const visibleSubjects = useMemo(
+    () =>
+      scope.isAdmin
+        ? subjects
+        : subjects.filter((sub) => scope.subjectByClass[classId]?.includes(sub.id)),
+    [subjects, scope, classId]
+  );
+
+  useEffect(() => {
+    const ok = visibleSubjects.some((s) => s.id === subjectId);
+    if (subjectId && !ok) setSubjectId("");
+  }, [visibleSubjects, subjectId]);
 
   const max = useMemo(() => Number(maxMarks) || 0, [maxMarks]);
 
@@ -186,6 +209,10 @@ export default function BulkMarksPage() {
       setError("Select a class, section, subject and a positive max marks first.");
       return;
     }
+    if (!scope.isAdmin && !scope.subjectByClass[classId]?.includes(subjectId)) {
+      setError("You can only save marks for subjects you are assigned to.");
+      return;
+    }
     setSaving(true);
     try {
       await bulkSetMarks(
@@ -216,8 +243,24 @@ export default function BulkMarksPage() {
     }
   }
 
-  if (loading) {
+  if (loading || !scope.ready) {
     return <p className="text-sm text-on-surface/60 py-8 text-center">Loading…</p>;
+  }
+
+  if (!scope.isAdmin && classes.length === 0) {
+    return (
+      <div className="space-y-6">
+        <header className="glass-panel p-4">
+          <h1 className="text-xl font-semibold">Bulk Marks Entry</h1>
+        </header>
+        <GlassCard className="p-6">
+          <p className="text-sm text-on-surface/60">
+            No classes assigned to you yet. Ask an admin to assign you as class or subject teacher
+            to start entering marks.
+          </p>
+        </GlassCard>
+      </div>
+    );
   }
 
   return (
@@ -288,7 +331,7 @@ export default function BulkMarksPage() {
           <Field label="Subject">
             <Select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required>
               <option value="">Select…</option>
-              {subjects.map((s) => (
+              {visibleSubjects.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>

@@ -111,6 +111,22 @@ export type NotificationItem = {
   createdAt?: unknown;
 };
 
+export type Assignment = {
+  id: string;
+  type: "class_teacher" | "subject_teacher";
+  class_id: string;
+  subject_id?: string;
+  email: string;
+  name?: string;
+};
+
+export type TeacherRoles = {
+  /** Classes the user is class teacher of (roster + attendance access). */
+  classIds: string[];
+  /** Subjects teachable per class. Class teachers get every subject in their class. */
+  subjectByClass: Record<string, string[]>;
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -121,6 +137,7 @@ const col = {
   staff: () => collection(db!, "staff"),
   leaves: () => collection(db!, "leave_requests"),
   notifications: () => collection(db!, "notifications"),
+  assignments: () => collection(db!, "assignments"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -373,4 +390,75 @@ export async function markAllNotificationsRead() {
   await Promise.all(
     items.filter((n) => !n.read).map((n) => updateDoc(doc(db!, "notifications", n.id), { read: true }))
   );
+}
+
+export async function listAssignments(): Promise<Assignment[]> {
+  const snap = await getDocs(col.assignments());
+  return snap.docs.map((d) => ({ ...(d.data() as Assignment), id: d.id }));
+}
+
+/** One class teacher per class. Reassigning (or empty email to unassign) overwrites the doc. */
+export async function assignClassTeacher(classId: string, email: string, name?: string) {
+  const id = `ct_${classId}`;
+  if (!email) return deleteDoc(doc(col.assignments(), id));
+  await setDoc(doc(col.assignments(), id), {
+    type: "class_teacher",
+    class_id: classId,
+    email,
+    name: name || email,
+  });
+}
+
+/** Subject teacher per (class, subject). Reassigning (or empty email to unassign) overwrites. */
+export async function assignSubjectTeacher(
+  classId: string,
+  subjectId: string,
+  email: string,
+  name?: string
+) {
+  const id = `st_${classId}_${subjectId}`;
+  if (!email) return deleteDoc(doc(col.assignments(), id));
+  await setDoc(doc(col.assignments(), id), {
+    type: "subject_teacher",
+    class_id: classId,
+    subject_id: subjectId,
+    email,
+    name: name || email,
+  });
+}
+
+export async function unassignAssignment(id: string) {
+  await deleteDoc(doc(col.assignments(), id));
+}
+
+export async function assignmentsFor(email: string): Promise<Assignment[]> {
+  const q = query(col.assignments(), where("email", "==", email));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...(d.data() as Assignment), id: d.id }));
+}
+
+/**
+ * Resolve a teacher's access from their assignments.
+ * Class teachers manage the whole class (marks for every subject), so their class
+ * gets every subject listed in `allSubjects`.
+ */
+export async function teacherRoles(
+  email: string,
+  allSubjects: Subject[] = []
+): Promise<TeacherRoles> {
+  const all = await assignmentsFor(email);
+  const classIds: string[] = [];
+  const subjectByClass: Record<string, string[]> = {};
+  for (const a of all) {
+    if (a.type === "class_teacher") {
+      if (!classIds.includes(a.class_id)) classIds.push(a.class_id);
+      subjectByClass[a.class_id] = allSubjects.map((s) => s.id) ?? [];
+    } else if (a.type === "subject_teacher" && a.subject_id) {
+      if (!subjectByClass[a.class_id]) subjectByClass[a.class_id] = [];
+      if (!subjectByClass[a.class_id].includes(a.subject_id)) {
+        subjectByClass[a.class_id].push(a.subject_id);
+      }
+    }
+  }
+  return { classIds, subjectByClass };
 }
