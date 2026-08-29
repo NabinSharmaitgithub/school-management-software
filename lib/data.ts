@@ -287,7 +287,10 @@ export async function bulkSetMarks(entries: BulkMarkEntry[]) {
     entries.map((e) => {
       const id = `${e.student_id}_${e.subject_id}_${e.exam_term}_${e.academic_year}`
         .replace(/[^A-Za-z0-9._-]/g, "_");
-      return setDoc(doc(col.marks(), id), e);
+      const clean = Object.fromEntries(
+        Object.entries(e).filter(([, v]) => v !== undefined && v !== null)
+      );
+      return setDoc(doc(col.marks(), id), clean);
     })
   );
 }
