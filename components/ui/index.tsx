@@ -126,3 +126,11 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={cn(inputCls, "appearance-none", props.className)} />;
 }
+
+export function GradePill({ pct }: { pct: number }) {
+  if (pct >= 90) return <StatusPill tone="success">A+</StatusPill>;
+  if (pct >= 75) return <StatusPill tone="primary">A</StatusPill>;
+  if (pct >= 60) return <StatusPill tone="warning">B</StatusPill>;
+  if (pct >= 40) return <StatusPill tone="neutral">C</StatusPill>;
+  return <StatusPill tone="error">F</StatusPill>;
+}

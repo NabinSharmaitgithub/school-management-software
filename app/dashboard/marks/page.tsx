@@ -10,7 +10,7 @@ import {
   studentNames,
   subjectNames,
 } from "@/lib/data";
-import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
+import { Field, GlassButton, GlassCard, GradePill, Input, Modal, Select, StatusPill } from "@/components/ui";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 type Mark = { id: string; student_id: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number };
@@ -280,12 +280,4 @@ export default function MarksPage() {
       </Modal>
     </div>
   );
-}
-
-function GradePill({ pct }: { pct: number }) {
-  if (pct >= 90) return <StatusPill tone="success">A+</StatusPill>;
-  if (pct >= 75) return <StatusPill tone="primary">A</StatusPill>;
-  if (pct >= 60) return <StatusPill tone="warning">B</StatusPill>;
-  if (pct >= 40) return <StatusPill> C </StatusPill>;
-  return <StatusPill tone="error">F</StatusPill>;
 }

@@ -1,5 +1,6 @@
 export const NAV_ITEMS = [
   { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
+  { label: "My Class", icon: "groups", href: "/dashboard/my-class" },
   { label: "Students", icon: "group", href: "/dashboard/students" },
   { label: "Academics", icon: "menu_book", href: "/dashboard/academics" },
   { label: "Attendance", icon: "event_available", href: "/dashboard/attendance" },
