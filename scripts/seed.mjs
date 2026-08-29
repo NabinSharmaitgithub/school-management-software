@@ -87,6 +87,21 @@ async function writeDoc(token, collectionPath, docId, data) {
   // 409 = doc already exists → skip (keeps seeding idempotent)
 }
 
+/** Patch fields on an existing doc (Firestore PATCH merge). */
+async function updateDoc(token, collectionPath, docId, data) {
+  const url =
+    `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${collectionPath}/${docId}?updateMask.fieldPaths=${Object.keys(data).join("&updateMask.fieldPaths=")}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: fields(data) }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Update ${collectionPath}/${docId} failed (${res.status}): ${body}`);
+  }
+}
+
 const classes = [
   ["c7a", "Grade 7", "A"],
   ["c8a", "Grade 8", "A"],
@@ -447,18 +462,21 @@ async function main() {
   }
 
   // ── High-value screens: staff, exams, payslips, timetable ──────────
+  // teacher@school.local maps to the Mathematics teacher (st_1).
   const staffList = [
-    ["st_1", "Ramesh Adhikari", "Mathematics Teacher", "Mathematics", "active"],
-    ["st_2", "Priya Shrestha", "English Teacher", "English", "active"],
-    ["st_3", "David Shrestha", "Science Teacher", "Science", "active"],
-    ["st_4", "Sunita Karki", "Administrator", "Administration", "active"],
+    ["st_1", "Ramesh Adhikari", "Mathematics Teacher", "Mathematics", TEACHER_EMAIL, "active"],
+    ["st_2", "Priya Shrestha", "English Teacher", "English", "st_2@school.edu", "active"],
+    ["st_3", "David Shrestha", "Science Teacher", "Science", "st_3@school.edu", "active"],
+    ["st_4", "Sunita Karki", "Administrator", "Administration", "st_4@school.edu", "active"],
   ];
-  for (const [id, name, role, department, status] of staffList) {
+  for (const [id, name, role, department, staffEmail, status] of staffList) {
     await writeDoc(token, "staff", id, {
       name, role, department,
-      email: `${id}@school.edu`, phone: "98", joined: "2020-04-01", status,
+      email: staffEmail, phone: "98", joined: "2020-04-01", status,
     });
   }
+  // Patch email on already-seeded staff so the teacher login is linked.
+  await updateDoc(token, "staff", "st_1", { email: TEACHER_EMAIL });
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const prevMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);

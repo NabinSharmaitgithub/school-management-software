@@ -5,11 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { addLeave, deleteStaff, getStaff, listLeaves, updateStaff } from "@/lib/data";
 import type { LeaveRequest, Staff } from "@/lib/data";
+import { useAuthEmail } from "@/components/dashboard/teacher-scope";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
 export default function StaffProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const email = useAuthEmail();
+  const isTeacher = email === "teacher@school.local";
   const [staff, setStaff] = useState<Staff | null>(null);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [editing, setEditing] = useState(false);
@@ -107,6 +110,8 @@ export default function StaffProfilePage() {
     );
   }
 
+  const isOwn = isTeacher && staff.email === email;
+
   return (
     <div className="max-w-3xl space-y-6">
       <header className="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
@@ -129,21 +134,23 @@ export default function StaffProfilePage() {
           </p>
         </div>
         <div className="flex gap-2">
-          {!editing && (
-            <>
-              <GlassButton variant="ghost" onClick={() => setLeaveModal(true)}>
-                <span className="material-symbols-outlined text-lg">event_busy</span>
-                Request Leave
-              </GlassButton>
-              <GlassButton variant="ghost" onClick={() => setEditing(true)}>
-                <span className="material-symbols-outlined text-lg">edit</span>
-                Edit
-              </GlassButton>
-            </>
+          {!editing && (isOwn || !isTeacher) && (
+            <GlassButton variant="ghost" onClick={() => setLeaveModal(true)}>
+              <span className="material-symbols-outlined text-lg">event_busy</span>
+              Request Leave
+            </GlassButton>
           )}
-          <GlassButton variant="danger" onClick={() => setConfirm(true)}>
-            <span className="material-symbols-outlined text-lg">delete</span>
-          </GlassButton>
+          {!editing && !isTeacher && (
+            <GlassButton variant="ghost" onClick={() => setEditing(true)}>
+              <span className="material-symbols-outlined text-lg">edit</span>
+              Edit
+            </GlassButton>
+          )}
+          {!isTeacher && (
+            <GlassButton variant="danger" onClick={() => setConfirm(true)}>
+              <span className="material-symbols-outlined text-lg">delete</span>
+            </GlassButton>
+          )}
         </div>
       </header>
 
@@ -217,7 +224,7 @@ export default function StaffProfilePage() {
           <h2 className="font-semibold text-sm text-on-surface/60 uppercase tracking-wide">
             Leave History
           </h2>
-          {!editing && (
+          {!editing && (isOwn || !isTeacher) && (
             <GlassButton variant="ghost" onClick={() => setLeaveModal(true)}>
               <span className="material-symbols-outlined text-lg">add</span>
               Request Leave

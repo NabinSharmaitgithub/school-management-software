@@ -22,7 +22,6 @@ export const NAV_ITEMS = [
 ];
 
 const ADMIN_ONLY = [
-  "/dashboard/staff",
   "/dashboard/assignments",
   "/dashboard/finance",
   "/dashboard/library",
@@ -34,6 +33,7 @@ const ADMIN_ONLY = [
   "/dashboard/id-cards",
   "/dashboard/analytics",
   "/dashboard/payroll",
+  "/dashboard/settings",
 ];
 
 export function navItemsFor(email?: string | null) {

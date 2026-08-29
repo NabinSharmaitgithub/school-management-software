@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  addLeave,
   deleteStaff,
   listLeaves,
   listStaff,
@@ -10,15 +11,21 @@ import {
   updateLeave,
 } from "@/lib/data";
 import type { LeaveRequest, Staff } from "@/lib/data";
-import { GlassButton, GlassCard, Modal, StatusPill } from "@/components/ui";
+import { useAuthEmail } from "@/components/dashboard/teacher-scope";
+import { Field, GlassButton, GlassCard, Input, Modal, StatusPill } from "@/components/ui";
 
 export default function StaffPage() {
+  const email = useAuthEmail();
+  const isTeacher = email === "teacher@school.local";
   const [tab, setTab] = useState<"directory" | "leaves">("directory");
   const [staff, setStaff] = useState<Staff[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [active, setActive] = useState<string | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [leave, setLeave] = useState({ start_date: "", end_date: "", reason: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,6 +55,8 @@ export default function StaffPage() {
     );
   }, [staff, q]);
 
+  const myId = useMemo(() => staff.find((s) => s.email === email)?.id ?? null, [staff, email]);
+
   async function onDelete() {
     if (!active) return;
     await deleteStaff(active);
@@ -58,6 +67,32 @@ export default function StaffPage() {
   async function setLeaveStatus(id: string, status: LeaveRequest["status"]) {
     await updateLeave(id, { status });
     load();
+  }
+
+  async function onSubmitLeave(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!myId || !leave.start_date || !leave.end_date || !leave.reason.trim()) {
+      setError("Start date, end date and reason are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await addLeave({
+        staff_id: myId,
+        start_date: leave.start_date,
+        end_date: leave.end_date,
+        reason: leave.reason.trim(),
+        status: "pending",
+      });
+      setLeaveOpen(false);
+      setLeave({ start_date: "", end_date: "", reason: "" });
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const pending = leaves.filter((l) => l.status === "pending").length;
@@ -71,14 +106,22 @@ export default function StaffPage() {
             {tab === "directory" ? `${filtered.length} staff members` : `${pending} pending leave requests`}
           </p>
         </div>
-        {tab === "directory" && (
-          <Link href="/dashboard/staff/new">
-            <GlassButton>
-              <span className="material-symbols-outlined text-lg">add</span>
-              Add Staff
+        <div className="flex gap-2">
+          {tab === "leaves" && isTeacher && (
+            <GlassButton variant="ghost" onClick={() => setLeaveOpen(true)}>
+              <span className="material-symbols-outlined text-lg">event_busy</span>
+              Request Leave
             </GlassButton>
-          </Link>
-        )}
+          )}
+          {tab === "directory" && !isTeacher && (
+            <Link href="/dashboard/staff/new">
+              <GlassButton>
+                <span className="material-symbols-outlined text-lg">add</span>
+                Add Staff
+              </GlassButton>
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="flex gap-2">
@@ -174,12 +217,14 @@ export default function StaffPage() {
                         >
                           <span className="material-symbols-outlined text-lg">visibility</span>
                         </Link>
-                        <button
-                          onClick={() => setActive(s.id)}
-                          className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
-                        >
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
+                        {!isTeacher && (
+                          <button
+                            onClick={() => setActive(s.id)}
+                            className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
+                          >
+                            <span className="material-symbols-outlined text-lg">delete</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -194,7 +239,7 @@ export default function StaffPage() {
             <p className="text-sm text-on-surface/60 py-8 text-center">Loading leave requests…</p>
           ) : leaves.length === 0 ? (
             <p className="text-sm text-on-surface/60 py-8 text-center">
-              No leave requests yet. Staff can request leave from their profile.
+              No leave requests yet.
             </p>
           ) : (
             <table className="w-full text-sm">
@@ -231,7 +276,7 @@ export default function StaffPage() {
                       </StatusPill>
                     </td>
                     <td className="py-3 text-right">
-                      {l.status === "pending" ? (
+                      {!isTeacher && l.status === "pending" ? (
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setLeaveStatus(l.id, "approved")}
@@ -270,6 +315,45 @@ export default function StaffPage() {
             Delete
           </GlassButton>
         </div>
+      </Modal>
+
+      <Modal open={leaveOpen} onClose={() => setLeaveOpen(false)} title="Request leave">
+        <form className="space-y-4" onSubmit={onSubmitLeave}>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Start date *">
+              <Input
+                type="date"
+                value={leave.start_date}
+                onChange={(e) => setLeave((l) => ({ ...l, start_date: e.target.value }))}
+                required
+              />
+            </Field>
+            <Field label="End date *">
+              <Input
+                type="date"
+                value={leave.end_date}
+                onChange={(e) => setLeave((l) => ({ ...l, end_date: e.target.value }))}
+                required
+              />
+            </Field>
+          </div>
+          <Field label="Reason *">
+            <Input
+              placeholder="e.g. Medical leave"
+              value={leave.reason}
+              onChange={(e) => setLeave((l) => ({ ...l, reason: e.target.value }))}
+              required
+            />
+          </Field>
+          <div className="flex justify-end gap-3 pt-2">
+            <GlassButton type="button" variant="ghost" onClick={() => setLeaveOpen(false)}>
+              Cancel
+            </GlassButton>
+            <GlassButton type="submit" disabled={saving}>
+              {saving ? "Submitting…" : "Submit Request"}
+            </GlassButton>
+          </div>
+        </form>
       </Modal>
     </div>
   );

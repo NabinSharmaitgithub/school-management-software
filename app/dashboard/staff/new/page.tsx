@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { addStaff } from "@/lib/data";
+import { useAuthEmail } from "@/components/dashboard/teacher-scope";
 import { Field, GlassButton, GlassCard, Input, Select } from "@/components/ui";
 
 export default function NewStaffPage() {
   const router = useRouter();
+  const email = useAuthEmail();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -19,6 +21,10 @@ export default function NewStaffPage() {
     joined: "",
     status: "active" as "active" | "on_leave" | "inactive",
   });
+
+  useEffect(() => {
+    if (email === "teacher@school.local") router.replace("/dashboard/staff");
+  }, [email, router]);
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
