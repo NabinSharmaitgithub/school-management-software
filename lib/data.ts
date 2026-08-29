@@ -90,13 +90,11 @@ export async function listStudents(): Promise<Student[]> {
 }
 
 export async function studentsInClass(classId: string): Promise<Student[]> {
-  const q = query(
-    col.students(),
-    where("class_id", "==", classId),
-    orderBy("name")
-  );
+  const q = query(col.students(), where("class_id", "==", classId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ ...(d.data() as Student), id: d.id }));
+  return snap.docs
+    .map((d) => ({ ...(d.data() as Student), id: d.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function listClasses(): Promise<Class[]> {
