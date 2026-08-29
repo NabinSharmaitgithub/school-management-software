@@ -239,7 +239,14 @@ export default function BulkMarksPage() {
             <span className="material-symbols-outlined text-lg">download</span>
             Template
           </GlassButton>
-          <GlassButton onClick={() => setConfirmOpen(true)} disabled={rows.length === 0 || invalidCount > 0 || !classId || !subjectId || max <= 0}>
+          <GlassButton
+            onClick={() => {
+              setError("");
+              setSavedMsg("");
+              setConfirmOpen(true);
+            }}
+            disabled={rows.length === 0 || invalidCount > 0 || !classId || !subjectId || max <= 0}
+          >
             <span className="material-symbols-outlined text-lg">save</span>
             Save All
           </GlassButton>
@@ -396,6 +403,9 @@ export default function BulkMarksPage() {
               {grade} · {section} · {subjects.find((s) => s.id === subjectId)?.name ?? "Subject"} · {examTerm} ({academicYear}).
               Re-saving overwrites existing entries for this subject & term.
             </p>
+            {error && (
+              <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{error}</p>
+            )}
             <div className="flex justify-end gap-3">
               <GlassButton variant="ghost" onClick={() => setConfirmOpen(false)}>
                 Cancel

@@ -26,7 +26,14 @@ export function GlassButton({
     danger: "bg-rose/90 hover:bg-rose text-white shadow",
   };
   return (
-    <button className={cn(variants[variant], "rounded-lg transition-all", className)} {...props}>
+    <button
+      className={cn(
+        variants[variant],
+        "rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:saturate-50",
+        className
+      )}
+      {...props}
+    >
       {children}
     </button>
   );
