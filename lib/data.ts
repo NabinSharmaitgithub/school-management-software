@@ -147,6 +147,47 @@ export type Loan = {
   fine_paid?: boolean;
 };
 
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  audience: "all" | "staff" | "parents" | "class";
+  class_id?: string;
+  priority: "high" | "normal" | "low";
+  draft: boolean;
+  author: string; // display name of the issuing office
+  date: string; // YYYY-MM-DD publish date
+  createdAt?: unknown;
+};
+
+export type Broadcast = {
+  id: string;
+  subject: string;
+  body: string;
+  channel: "inapp" | "sms" | "email";
+  groups: string[]; // recipient group names
+  count: number;
+  status: "delivered" | "pending" | "failed";
+  createdAt?: unknown;
+};
+
+export type ThreadMessage = {
+  id?: string;
+  text: string;
+  from: string;
+  at: string; // ISO timestamp
+  mine: boolean;
+};
+
+export type Thread = {
+  id: string;
+  name: string;
+  participants: string[];
+  unread: number;
+  online?: boolean;
+  messages: ThreadMessage[];
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -160,6 +201,9 @@ const col = {
   assignments: () => collection(db!, "assignments"),
   books: () => collection(db!, "books"),
   loans: () => collection(db!, "loans"),
+  announcements: () => collection(db!, "announcements"),
+  broadcasts: () => collection(db!, "broadcasts"),
+  threads: () => collection(db!, "threads"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -389,6 +433,62 @@ export async function addLeave(data: Omit<LeaveRequest, "id">) {
 
 export async function updateLeave(id: string, data: Partial<LeaveRequest>) {
   await updateDoc(doc(db!, "leave_requests", id), data);
+}
+
+export async function listAnnouncements(): Promise<Announcement[]> {
+  const snap = await getDocs(col.announcements());
+  const items = snap.docs.map((d) => ({ ...(d.data() as Announcement), id: d.id }));
+  return items.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export async function addAnnouncement(data: Omit<Announcement, "id">) {
+  const ref = doc(col.announcements());
+  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function deleteAnnouncement(id: string) {
+  await deleteDoc(doc(db!, "announcements", id));
+}
+
+export async function listBroadcasts(): Promise<Broadcast[]> {
+  const snap = await getDocs(col.broadcasts());
+  const items = snap.docs.map((d) => ({ ...(d.data() as Broadcast), id: d.id }));
+  const ts = (b: Broadcast) => {
+    const t = b.createdAt;
+    if (t && typeof t === "object" && "seconds" in t) return Number((t as { seconds: number }).seconds);
+    if (typeof t === "string") return new Date(t).getTime() / 1000;
+    return 0;
+  };
+  return items.sort((a, b) => ts(b) - ts(a));
+}
+
+export async function addBroadcast(data: Omit<Broadcast, "id">) {
+  const ref = doc(col.broadcasts());
+  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+/** List messaging threads with their stored messages, most recently active first. */
+export async function listThreads(): Promise<Thread[]> {
+  const snap = await getDocs(col.threads());
+  const items = snap.docs.map((d) => {
+    const t = d.data() as Thread;
+    return { ...t, id: d.id, messages: t.messages ?? [] };
+  });
+  return items.sort((a, b) => {
+    const la = a.messages[a.messages.length - 1]?.at ?? "";
+    const lb = b.messages[b.messages.length - 1]?.at ?? "";
+    return lb.localeCompare(la);
+  });
+}
+
+/** Append a message to a thread. */
+export async function sendThreadMessage(threadId: string, message: Omit<ThreadMessage, "id">) {
+  const ref = doc(db!, "threads", threadId);
+  const snap = await getDoc(ref);
+  const cur = (snap.data() as Thread | undefined)?.messages ?? [];
+  await updateDoc(ref, { messages: [...cur, message] });
 }
 
 /** List all books in the catalog, ordered by title. */

@@ -53,7 +53,21 @@ function fields(obj) {
     if (v === undefined || v === null) continue;
     if (typeof v === "number") out[k] = { integerValue: v };
     else if (typeof v === "boolean") out[k] = { booleanValue: v };
-    else out[k] = { stringValue: String(v) };
+    else if (Array.isArray(v)) {
+      out[k] = {
+        arrayValue: {
+          values: v.map((item) =>
+            item && typeof item === "object"
+              ? { mapValue: { fields: fields(item) } }
+              : typeof item === "number"
+                ? { integerValue: item }
+                : typeof item === "boolean"
+                  ? { booleanValue: item }
+                  : { stringValue: String(item) }
+          ),
+        },
+      };
+    } else out[k] = { stringValue: String(v) };
   }
   return out;
 }
@@ -117,6 +131,83 @@ const books = [
 const loans = [
   ["l_1", "b_gatsby", "s_1"],
   ["l_2", "b_calculus", "s_3"],
+];
+
+const announcements = [
+  [
+    "a_emergency",
+    "Emergency Campus Closure Due to Severe Weather",
+    "All students and staff: the campus will be closed today due to expected severe weather. All in-person classes are canceled. Online sessions may proceed at the discretion of the instructor.",
+    "all", null, "high", false, "Principal's Office",
+  ],
+  [
+    "a_registration",
+    "Fall Semester Registration Opens Next Week",
+    "Registration for the upcoming semester will open on Monday at 8:00 AM. Please ensure all outstanding fees are cleared before attempting to register.",
+    "all", null, "normal", false, "Registrar's Office",
+  ],
+  [
+    "a_library",
+    "Library Weekend Hours Update",
+    "Starting this weekend, the main library will extend its hours until 10:00 PM on Saturdays for students preparing for exams.",
+    "staff", null, "low", false, "Library Services",
+  ],
+  [
+    "a_faculty_draft",
+    "Faculty Meeting Rescheduled",
+    "The monthly faculty meeting has been moved to Thursday at 3:30 PM in the main conference room.",
+    "staff", null, "normal", true, "Faculty Office",
+  ],
+];
+
+const broadcasts = [
+  {
+    id: "bc_weekly",
+    subject: "Weekly Newsletter",
+    body: "A roundup of this week's achievements, events, and reminders for all parents.",
+    channel: "email", groups: ["Parents"], count: 210, status: "delivered",
+    createdAt: new Date(Date.now() - 6 * 3600000).toISOString(),
+  },
+  {
+    id: "bc_bus",
+    subject: "Bus Route 4 Delay",
+    body: "Bus route 4 is running 15 minutes late today due to road works. Parents please plan pickups accordingly.",
+    channel: "sms", groups: ["Bus Route 4 Parents"], count: 42, status: "pending",
+    createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
+  },
+  {
+    id: "bc_meeting",
+    subject: "Staff Meeting Cancelled",
+    body: "Today's scheduled staff meeting has been cancelled. A new date will be announced shortly.",
+    channel: "inapp", groups: ["Staff"], count: 142, status: "failed",
+    createdAt: new Date(Date.now() - 48 * 3600000).toISOString(),
+  },
+];
+
+const threads = [
+  {
+    id: "th_alex",
+    name: "Alex Johnson",
+    participants: ["You", "Alex Johnson"],
+    unread: 2,
+    online: true,
+    messages: [
+      { text: "Hi, are you available later?", from: "Alex Johnson", at: new Date(Date.now() - 55 * 60000).toISOString(), mine: false },
+      { text: "Yes, I have some free time after 2 PM. What do you need help with?", from: "You", at: new Date(Date.now() - 50 * 60000).toISOString(), mine: true },
+      { text: "Can we review the physics assignment today? I'm stuck on question 4 regarding momentum.", from: "Alex Johnson", at: new Date(Date.now() - 45 * 60000).toISOString(), mine: false },
+    ],
+  },
+  {
+    id: "th_study",
+    name: "Math Study Group",
+    participants: ["You", "Emma", "Nisha"],
+    unread: 0,
+    online: false,
+    messages: [
+      { text: "Shall we go over the quadratic word problems on Thursday?", from: "Emma", at: new Date(Date.now() - 26 * 3600000).toISOString(), mine: false },
+      { text: "Sounds like a plan. See you all tomorrow.", from: "You", at: new Date(Date.now() - 25 * 3600000).toISOString(), mine: true },
+    ],
+  },
 ];
 
 async function main() {
@@ -188,12 +279,31 @@ async function main() {
     });
   }
 
+  for (const [id, title, body, audience, classId, priority, draft, author] of announcements) {
+    await writeDoc(token, "announcements", id, {
+      title, body, audience, class_id: classId, priority, draft, author,
+      date: today,
+    });
+  }
+
+  for (const b of broadcasts) {
+    await writeDoc(token, "broadcasts", b.id, b);
+  }
+
+  for (const t of threads) {
+    await writeDoc(token, "threads", t.id, {
+      name: t.name, participants: t.participants, unread: t.unread,
+      online: t.online, messages: t.messages,
+    });
+  }
+
   console.log(
     "Seeded:", classes.length, "classes,", students.length, "students,",
     subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
     + " teacher assignments."
   );
   console.log("Library:", books.length, "books,", loans.length, "loans.");
+  console.log("Communications:", announcements.length, "announcements,", broadcasts.length, "broadcasts,", threads.length, "threads.");
 }
 
 main().then(() => process.exit(0)).catch((e) => {
