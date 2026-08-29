@@ -85,10 +85,6 @@ export default function DashboardPage() {
               placeholder="Search…"
             />
           </div>
-          <button className="glass-btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-on-surface/70 relative">
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose" />
-          </button>
         </div>
       </header>
 

@@ -86,6 +86,14 @@ export type LeaveRequest = {
   status: "pending" | "approved" | "rejected";
 };
 
+export type NotificationItem = {
+  id: string;
+  title: string;
+  body?: string;
+  read: boolean;
+  createdAt?: unknown;
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -95,6 +103,7 @@ const col = {
   payments: () => collection(db!, "payments"),
   staff: () => collection(db!, "staff"),
   leaves: () => collection(db!, "leave_requests"),
+  notifications: () => collection(db!, "notifications"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -310,4 +319,27 @@ export async function addLeave(data: Omit<LeaveRequest, "id">) {
 
 export async function updateLeave(id: string, data: Partial<LeaveRequest>) {
   await updateDoc(doc(db!, "leave_requests", id), data);
+}
+
+export async function listNotifications(): Promise<NotificationItem[]> {
+  const snap = await getDocs(col.notifications());
+  const items = snap.docs.map((d) => ({ ...(d.data() as NotificationItem), id: d.id }));
+  const ts = (n: NotificationItem) =>
+    n.createdAt && typeof n.createdAt === "object" && "seconds" in n.createdAt
+      ? Number((n.createdAt as { seconds: number }).seconds)
+      : 0;
+  return items.sort((a, b) => ts(b) - ts(a));
+}
+
+export async function addNotification(data: Omit<NotificationItem, "id">) {
+  const ref = doc(col.notifications());
+  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function markAllNotificationsRead() {
+  const items = await listNotifications();
+  await Promise.all(
+    items.filter((n) => !n.read).map((n) => updateDoc(doc(db!, "notifications", n.id), { read: true }))
+  );
 }

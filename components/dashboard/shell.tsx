@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { NAV_ITEMS } from "@/components/dashboard/nav";
+import { NotificationBell } from "@/components/dashboard/notification-bell";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -31,9 +32,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <span className="font-semibold text-sm">Academix</span>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBell />
           <MobileNav pathname={pathname} />
           <LogoutButton onLogout={() => router.replace("/")} />
         </div>
+      </div>
+
+      {/* Desktop notification bell */}
+      <div className="hidden md:block fixed top-6 right-6 z-40">
+        <NotificationBell />
       </div>
 
       {/* Sidebar */}
