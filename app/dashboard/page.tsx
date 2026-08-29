@@ -11,7 +11,7 @@ export default function DashboardPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth!, (user) => {
       if (!user) router.replace("/");
       setReady(true);
     });

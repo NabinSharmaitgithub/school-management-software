@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError("");
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth!, email);
       setSent(true);
     } catch {
       setError("Could not send reset link. Check the email and try again.");
