@@ -297,6 +297,33 @@ async function main() {
     });
   }
 
+  // Hostel rooms and allocations across the three blocks.
+  const rooms = [
+    { id: "r_a101", block: "A", floor: 1, room_number: "101", capacity: 4, occupants: ["s_1"] },
+    { id: "r_a102", block: "A", floor: 1, room_number: "102", capacity: 4, occupants: ["s_3"] },
+    { id: "r_a103", block: "A", floor: 2, room_number: "201", capacity: 4, occupants: [] },
+    { id: "r_a104", block: "A", floor: 2, room_number: "202", capacity: 4, occupants: [] },
+    { id: "r_b201", block: "B", floor: 1, room_number: "301", capacity: 4, occupants: [] },
+    { id: "r_b202", block: "B", floor: 1, room_number: "302", capacity: 4, occupants: [] },
+    { id: "r_c301", block: "C", floor: 1, room_number: "401", capacity: 4, occupants: ["s_2", "s_4"] },
+    { id: "r_c302", block: "C", floor: 1, room_number: "402", capacity: 4, occupants: [] },
+  ];
+  for (const r of rooms) {
+    await writeDoc(token, "rooms", r.id, r);
+  }
+
+  const feeDate = (offsetDays) =>
+    new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
+  const hostelFees = [
+    { id: "hf_s1", student_id: "s_1", room_id: "r_a101", fee_plan: "Term", rent: 8000, mess: 1500, laundry: 500, due_date: feeDate(12) },
+    { id: "hf_s3", student_id: "s_3", room_id: "r_a102", fee_plan: "Term", rent: 8000, mess: 1500, laundry: 500, due_date: feeDate(-6) },
+    { id: "hf_s2", student_id: "s_2", room_id: "r_c301", fee_plan: "Monthly", rent: 3000, mess: 1500, laundry: 500, due_date: feeDate(-3), paid_date: feeDate(-3) },
+    { id: "hf_s4", student_id: "s_4", room_id: "r_c301", fee_plan: "Annual", rent: 24000, mess: 4500, laundry: 1500, due_date: feeDate(20) },
+  ];
+  for (const f of hostelFees) {
+    await writeDoc(token, "hostel_fees", f.id, f);
+  }
+
   console.log(
     "Seeded:", classes.length, "classes,", students.length, "students,",
     subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
@@ -304,6 +331,7 @@ async function main() {
   );
   console.log("Library:", books.length, "books,", loans.length, "loans.");
   console.log("Communications:", announcements.length, "announcements,", broadcasts.length, "broadcasts,", threads.length, "threads.");
+  console.log("Hostel:", rooms.length, "rooms,", hostelFees.length, "fee records.");
 }
 
 main().then(() => process.exit(0)).catch((e) => {

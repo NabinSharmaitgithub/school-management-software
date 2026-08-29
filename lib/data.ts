@@ -188,6 +188,27 @@ export type Thread = {
   messages: ThreadMessage[];
 };
 
+export type HostelRoom = {
+  id: string;
+  block: "A" | "B" | "C";
+  floor: number;
+  room_number: string;
+  capacity: number;
+  occupants: string[]; // student ids
+};
+
+export type HostelFee = {
+  id: string;
+  student_id: string;
+  room_id: string;
+  fee_plan: string; // e.g. "Term (Fall)", "Monthly (Oct)", "Annual"
+  rent: number;
+  mess: number;
+  laundry: number;
+  due_date: string; // YYYY-MM-DD
+  paid_date?: string; // set once collected
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -204,6 +225,8 @@ const col = {
   announcements: () => collection(db!, "announcements"),
   broadcasts: () => collection(db!, "broadcasts"),
   threads: () => collection(db!, "threads"),
+  rooms: () => collection(db!, "rooms"),
+  hostel_fees: () => collection(db!, "hostel_fees"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -489,6 +512,82 @@ export async function sendThreadMessage(threadId: string, message: Omit<ThreadMe
   const snap = await getDoc(ref);
   const cur = (snap.data() as Thread | undefined)?.messages ?? [];
   await updateDoc(ref, { messages: [...cur, message] });
+}
+
+/** All hostel rooms, by block then room number. */
+export async function listRooms(): Promise<HostelRoom[]> {
+  const snap = await getDocs(col.rooms());
+  const items = snap.docs.map((d) => ({
+    ...(d.data() as HostelRoom),
+    id: d.id,
+    occupants: (d.data() as HostelRoom).occupants ?? [],
+  }));
+  return items.sort((a, b) =>
+    a.block === b.block
+      ? a.room_number.localeCompare(b.room_number, undefined, { numeric: true })
+      : a.block.localeCompare(b.block)
+  );
+}
+
+export async function addRoom(data: Omit<HostelRoom, "id" | "occupants">) {
+  const ref = doc(col.rooms());
+  await setDoc(ref, { ...data, occupants: [] });
+  return ref.id;
+}
+
+export async function deleteRoom(id: string) {
+  await deleteDoc(doc(db!, "rooms", id));
+}
+
+/** Assign a student to a free bed in a room. */
+export async function allocateBed(roomId: string, studentId: string) {
+  const ref = doc(db!, "rooms", roomId);
+  const snap = await getDoc(ref);
+  const cur = (snap.data() as HostelRoom | undefined)?.occupants ?? [];
+  if ((cur.length ?? 0) >= (snap.data() as HostelRoom)?.capacity) {
+    throw new Error("That room has no free beds.");
+  }
+  await updateDoc(ref, { occupants: [...cur, studentId] });
+}
+
+export async function removeOccupant(roomId: string, studentId: string) {
+  const ref = doc(db!, "rooms", roomId);
+  const snap = await getDoc(ref);
+  const cur = (snap.data() as HostelRoom | undefined)?.occupants ?? [];
+  await updateDoc(ref, { occupants: cur.filter((s) => s !== studentId) });
+}
+
+/** All hostel fee entries. */
+export async function listHostelFees(): Promise<HostelFee[]> {
+  const snap = await getDocs(col.hostel_fees());
+  return snap.docs.map((d) => ({ ...(d.data() as HostelFee), id: d.id }));
+}
+
+export async function addHostelFee(data: Omit<HostelFee, "id">) {
+  const ref = doc(col.hostel_fees());
+  await setDoc(ref, data);
+  return ref.id;
+}
+
+export async function deleteHostelFee(id: string) {
+  await deleteDoc(doc(db!, "hostel_fees", id));
+}
+
+/** Mark a hostel fee as collected and record it in the payments ledger. */
+export async function collectHostelFee(id: string, method: string) {
+  const ref = doc(db!, "hostel_fees", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Fee record not found.");
+  const fee = snap.data() as HostelFee;
+  const amount = fee.rent + fee.mess + fee.laundry;
+  await updateDoc(ref, { paid_date: new Date().toISOString().slice(0, 10) });
+  await addPayment({
+    student_id: fee.student_id,
+    description: `Hostel fee — ${fee.fee_plan}`,
+    amount,
+    date: new Date().toISOString().slice(0, 10),
+    method,
+  });
 }
 
 /** List all books in the catalog, ordered by title. */
