@@ -181,6 +181,13 @@ export async function attendanceFor(
   return out;
 }
 
+/** Attendance records since a date (inclusive). */
+export async function attendanceSince(since: string): Promise<AttendanceEntry[]> {
+  const q = query(col.attendance(), where("date", ">=", since), orderBy("date", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...(d.data() as AttendanceEntry), id: d.id }));
+}
+
 /** Upsert a student's status for a date. Doc id = `${studentId}_${date}` for idempotency. */
 export async function setAttendance(
   classId: string,
