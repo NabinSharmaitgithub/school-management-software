@@ -106,6 +106,19 @@ const payments = [
   ["p_3", "s_3", "Exam fee — Final", 1200, "Card"],
 ];
 
+const books = [
+  ["b_gatsby", "The Great Gatsby", "F. Scott Fitzgerald", "978-0-7432-7356-5", "Fiction", 3],
+  ["b_mockingbird", "To Kill a Mockingbird", "Harper Lee", "978-0-06-112008-4", "Fiction", 2],
+  ["b_calculus", "Advanced Calculus", "James Stewart", "978-0-534-39365-2", "Science", 1],
+  ["b_1984", "1984", "George Orwell", "978-0-451-52493-5", "Science Fiction", 2],
+  ["b_history", "A History of Modern India", "Bipan Chandra", "978-0-14-345681-4", "History", 2],
+];
+
+const loans = [
+  ["l_1", "b_gatsby", "s_1"],
+  ["l_2", "b_calculus", "s_3"],
+];
+
 async function main() {
   const token = await getToken();
   const today = new Date().toISOString().slice(0, 10);
@@ -140,6 +153,26 @@ async function main() {
     });
   }
 
+  for (const [id, title, author, isbn, genre, copies] of books) {
+    await writeDoc(token, "books", id, { title, author, isbn, genre, copies });
+  }
+
+  // Seed loans: due dates spread around today (one overdue to seed a fine).
+  const dueDates = [
+    new Date(Date.now() + 12 * 86400000).toISOString().slice(0, 10),
+    new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10),
+  ];
+  for (let i = 0; i < loans.length; i++) {
+    const [id, bookId, studentId] = loans[i];
+    await writeDoc(token, "loans", id, {
+      book_id: bookId,
+      student_id: studentId,
+      issued_date: today,
+      due_date: dueDates[i],
+      returned_date: null,
+    });
+  }
+
   // Teacher role assignments: teacher@school.local is class teacher of Grade 7-A
   // and subject teacher for Mathematics (7-A) and Science (8-A).
   await writeDoc(token, "assignments", "ct_c7a", {
@@ -160,6 +193,7 @@ async function main() {
     subjects.length, "subjects,", marks.length, "marks,", payments.length, "payments,"
     + " teacher assignments."
   );
+  console.log("Library:", books.length, "books,", loans.length, "loans.");
 }
 
 main().then(() => process.exit(0)).catch((e) => {

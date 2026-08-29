@@ -127,6 +127,26 @@ export type TeacherRoles = {
   subjectByClass: Record<string, string[]>;
 };
 
+export type Book = {
+  id: string;
+  title: string;
+  author: string;
+  isbn?: string;
+  genre: string;
+  copies: number;
+};
+
+export type Loan = {
+  id: string;
+  book_id: string;
+  student_id: string;
+  issued_date: string; // YYYY-MM-DD
+  due_date: string; // YYYY-MM-DD
+  returned_date?: string; // set when returned
+  fine?: number; // computed at return or when fine collected, ₹
+  fine_paid?: boolean;
+};
+
 const col = {
   students: () => collection(db!, "students"),
   classes: () => collection(db!, "classes"),
@@ -138,6 +158,8 @@ const col = {
   leaves: () => collection(db!, "leave_requests"),
   notifications: () => collection(db!, "notifications"),
   assignments: () => collection(db!, "assignments"),
+  books: () => collection(db!, "books"),
+  loans: () => collection(db!, "loans"),
 };
 
 /** List all docs in a collection, ordered by name when available. */
@@ -367,6 +389,76 @@ export async function addLeave(data: Omit<LeaveRequest, "id">) {
 
 export async function updateLeave(id: string, data: Partial<LeaveRequest>) {
   await updateDoc(doc(db!, "leave_requests", id), data);
+}
+
+/** List all books in the catalog, ordered by title. */
+export async function listBooks(): Promise<Book[]> {
+  const q = query(col.books(), orderBy("title"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...(d.data() as Book), id: d.id }));
+}
+
+export async function addBook(data: Omit<Book, "id">) {
+  const ref = doc(col.books());
+  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function deleteBook(id: string) {
+  await deleteDoc(doc(db!, "books", id));
+}
+
+/** All loans ever, newest first. Fill in book/student names via join maps. */
+export async function listLoans(): Promise<Loan[]> {
+  const q = query(col.loans(), orderBy("issued_date", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...(d.data() as Loan), id: d.id }));
+}
+
+/** Active (not returned) loans. Filtered client-side to avoid a composite Firestore index. */
+export async function activeLoans(): Promise<Loan[]> {
+  const snap = await getDocs(col.loans());
+  return snap.docs
+    .map((d) => ({ ...(d.data() as Loan), id: d.id }))
+    .filter((l) => !l.returned_date)
+    .sort((a, b) => b.issued_date.localeCompare(a.issued_date));
+}
+
+/** Issue a book to a student. Duplicate active loan of the same book is rejected in UI. */
+export async function issueBook(
+  bookId: string,
+  studentId: string,
+  issuedDate: string,
+  dueDate: string
+) {
+  const ref = doc(col.loans());
+  await setDoc(ref, {
+    book_id: bookId,
+    student_id: studentId,
+    issued_date: issuedDate,
+    due_date: dueDate,
+    returned_date: null,
+  });
+  return ref.id;
+}
+
+/** Return a loan: set the return date and any overdue fine (₹). */
+export async function returnLoan(
+  id: string,
+  returnDate: string,
+  fine: number,
+  finePaid: boolean
+) {
+  await updateDoc(doc(db!, "loans", id), {
+    returned_date: returnDate,
+    fine,
+    fine_paid: finePaid,
+  });
+}
+
+/** Record collection of an overdue fine without returning the book. */
+export async function collectLoanFine(id: string, fine: number) {
+  await updateDoc(doc(db!, "loans", id), { fine, fine_paid: true });
 }
 
 export async function listNotifications(): Promise<NotificationItem[]> {
