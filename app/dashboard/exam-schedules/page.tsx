@@ -15,6 +15,17 @@ import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from 
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+type BulkRow = { subject_id: string; date: string; start: string; end: string };
+
+function emptyBulkRow(): BulkRow {
+  return {
+    subject_id: "",
+    date: new Date().toISOString().slice(0, 10),
+    start: "09:00",
+    end: "12:00",
+  };
+}
+
 function dayName(date: string) {
   return WEEKDAYS[new Date(date + "T00:00:00").getDay()];
 }
@@ -50,6 +61,10 @@ export default function ExamSchedulesPage() {
     class_ids: [] as string[],
   });
   const [confirmDel, setConfirmDel] = useState("");
+
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkRows, setBulkRows] = useState<BulkRow[]>([emptyBulkRow()]);
+  const [bulkClasses, setBulkClasses] = useState<string[]>([]);
 
   const load = async () => {
     try {
@@ -144,6 +159,43 @@ export default function ExamSchedulesPage() {
     }));
   }
 
+  function toggleBulkClass(id: string) {
+    setBulkClasses((cs) => (cs.includes(id) ? cs.filter((x) => x !== id) : [...cs, id]));
+  }
+
+  function updateBulkRow(i: number, patch: Partial<BulkRow>) {
+    setBulkRows((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  }
+
+  async function onAddBulk(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (bulkClasses.length === 0 || bulkRows.some((r) => !r.subject_id)) {
+      setError("Pick class(es) and a subject for every row.");
+      return;
+    }
+    try {
+      await Promise.all(
+        bulkRows.map((r) =>
+          addExamSession({
+            exam_id: examId,
+            subject_id: r.subject_id,
+            class_ids: bulkClasses,
+            date: r.date,
+            start: r.start,
+            end: r.end,
+          })
+        )
+      );
+      setBulkOpen(false);
+      setBulkRows([emptyBulkRow()]);
+      setBulkClasses([]);
+      load();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
@@ -179,10 +231,16 @@ export default function ExamSchedulesPage() {
             </Select>
           </div>
           {exams.length > 0 && (
-            <GlassButton onClick={() => setSlotOpen(true)}>
-              <span className="material-symbols-outlined text-lg">add</span>
-              Add Session
-            </GlassButton>
+            <div className="flex gap-2">
+              <GlassButton onClick={() => setSlotOpen(true)}>
+                <span className="material-symbols-outlined text-lg">add</span>
+                Add Session
+              </GlassButton>
+              <GlassButton variant="ghost" onClick={() => setBulkOpen(true)}>
+                <span className="material-symbols-outlined text-lg">playlist_add</span>
+                Bulk Add
+              </GlassButton>
+            </div>
           )}
         </div>
 
@@ -316,6 +374,79 @@ export default function ExamSchedulesPage() {
           <div className="flex justify-end gap-3 pt-2">
             <GlassButton type="button" variant="ghost" onClick={() => setSlotOpen(false)}>Cancel</GlassButton>
             <GlassButton type="submit">Add Session</GlassButton>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Bulk add sessions modal ─────────────────────────── */}
+      <Modal open={bulkOpen} onClose={() => setBulkOpen(false)} title="Bulk Add Sessions" wide>
+        <form className="space-y-4" onSubmit={onAddBulk}>
+          <div>
+            <p className="text-xs font-medium text-on-surface/70 mb-2">Classes *</p>
+            <div className="flex flex-wrap gap-2">
+              {classes.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleBulkClass(c.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                    bulkClasses.includes(c.id)
+                      ? "border-primary bg-primary/15 text-primary font-semibold"
+                      : "border-white/60 hover:bg-white/40 text-on-surface/70"
+                  }`}
+                >
+                  {c.name.replace("Grade ", "")} {c.section}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {bulkRows.map((r, i) => (
+              <div key={i} className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
+                <Field label="Date *">
+                  <Input type="date" value={r.date} onChange={(e) => updateBulkRow(i, { date: e.target.value })} />
+                </Field>
+                <Field label="Start">
+                  <Input type="time" value={r.start} onChange={(e) => updateBulkRow(i, { start: e.target.value })} />
+                </Field>
+                <Field label="End">
+                  <Input type="time" value={r.end} onChange={(e) => updateBulkRow(i, { end: e.target.value })} />
+                </Field>
+                <Field label="Subject *">
+                  <Select value={r.subject_id} onChange={(e) => updateBulkRow(i, { subject_id: e.target.value })}>
+                    <option value="">Select subject…</option>
+                    {subjects.map((x) => (
+                      <option key={x.id} value={x.id}>{x.name}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <div className="flex justify-end pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setBulkRows((rs) => rs.filter((_, j) => j !== i))}
+                    disabled={bulkRows.length === 1}
+                    className="text-on-surface/40 hover:text-error transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Remove row"
+                  >
+                    <span className="material-symbols-outlined">remove</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+            <GlassButton type="button" variant="ghost" onClick={() => setBulkRows((rs) => [...rs, emptyBulkRow()])}>
+              <span className="material-symbols-outlined text-lg">add</span>
+              Add Row
+            </GlassButton>
+          </div>
+
+          {error && (
+            <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{error}</p>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <GlassButton type="button" variant="ghost" onClick={() => setBulkOpen(false)}>Cancel</GlassButton>
+            <GlassButton type="submit">Add Sessions</GlassButton>
           </div>
         </form>
       </Modal>
