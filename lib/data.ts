@@ -296,7 +296,7 @@ export type ExamSession = {
   date: string; // YYYY-MM-DD
   start: string; // "09:00"
   end: string; // "12:00"
-  room: string;
+  room?: string;
   invigilator?: string;
 };
 

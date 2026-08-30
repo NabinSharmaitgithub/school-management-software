@@ -4,14 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   listClasses,
   listSubjects,
-  listStaff,
   listExams,
   addExam,
   listExamSessions,
   addExamSession,
   deleteExamSession,
 } from "@/lib/data";
-import type { Exam, ExamSession, Subject, Class, Staff } from "@/lib/data";
+import type { Exam, ExamSession, Subject, Class } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -30,7 +29,6 @@ function fmtDate(date: string) {
 export default function ExamSchedulesPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [sessions, setSessions] = useState<ExamSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,24 +47,20 @@ export default function ExamSchedulesPage() {
     date: new Date().toISOString().slice(0, 10),
     start: "09:00",
     end: "12:00",
-    room: "",
-    invigilator: "",
     class_ids: [] as string[],
   });
   const [confirmDel, setConfirmDel] = useState("");
 
   const load = async () => {
     try {
-      const [c, s, st, e, se] = await Promise.all([
+      const [c, s, e, se] = await Promise.all([
         listClasses(),
         listSubjects(),
-        listStaff(),
         listExams(),
         listExamSessions(),
       ]);
       setClasses(c);
       setSubjects(s);
-      setStaff(st);
       setExams(e);
       setSessions(se);
       if (!examId && e.length) setExamId(e[0].id);
@@ -100,8 +94,6 @@ export default function ExamSchedulesPage() {
     });
   }, [sessions, examId, gradeFilter, classes]);
 
-  const unassigned = visible.filter((s) => !s.invigilator?.trim());
-
   const sorted = [...visible].sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
 
   async function onCreateExam(e: React.FormEvent) {
@@ -124,8 +116,8 @@ export default function ExamSchedulesPage() {
   async function onAddSlot(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!slot.subject_id || slot.class_ids.length === 0 || !slot.room.trim()) {
-      setError("Subject, class(es) and room are required.");
+    if (!slot.subject_id || slot.class_ids.length === 0) {
+      setError("Subject and class(es) are required.");
       return;
     }
     try {
@@ -136,11 +128,9 @@ export default function ExamSchedulesPage() {
         date: slot.date,
         start: slot.start,
         end: slot.end,
-        room: slot.room.trim(),
-        invigilator: slot.invigilator.trim() || undefined,
       });
       setSlotOpen(false);
-      setSlot((s) => ({ ...s, class_ids: [], invigilator: "", room: "" }));
+      setSlot((s) => ({ ...s, class_ids: [] }));
       load();
     } catch (err) {
       setError((err as Error).message);
@@ -204,25 +194,14 @@ export default function ExamSchedulesPage() {
           </p>
         ) : (
           <>
-            {unassigned.length > 0 && (
-              <div className="rounded-lg bg-amber/10 border border-amber/30 px-3 py-2 mb-4 flex items-start gap-2">
-                <span className="material-symbols-outlined text-lg text-amber mt-0.5">warning</span>
-                <p className="text-xs text-amber">
-                  {unassigned.length} session{unassigned.length > 1 ? "s" : ""} without an invigilator — please assign one.
-                </p>
-              </div>
-            )}
-
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
+              <table className="w-full text-sm min-w-[520px]">
                 <thead>
                   <tr className="text-left text-xs text-on-surface/50 border-b border-on-surface/10">
                     <th className="py-2 pr-2">Date</th>
                     <th className="py-2 pr-2">Time</th>
                     <th className="py-2 pr-2">Subject</th>
                     <th className="py-2 pr-2">Class</th>
-                    <th className="py-2 pr-2">Room</th>
-                    <th className="py-2 pr-2">Invigilator</th>
                     <th className="py-2"></th>
                   </tr>
                 </thead>
@@ -241,17 +220,6 @@ export default function ExamSchedulesPage() {
                             <StatusPill key={cid} tone="neutral">{className(cid)}</StatusPill>
                           ))}
                         </div>
-                      </td>
-                      <td className="py-3 pr-2 text-on-surface/80">{s.room}</td>
-                      <td className="py-3 pr-2">
-                        {s.invigilator ? (
-                          s.invigilator
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs text-amber font-medium">
-                            <span className="material-symbols-outlined text-sm">warning</span>
-                            Unassigned
-                          </span>
-                        )}
                       </td>
                       <td className="py-3 text-right">
                         <button
@@ -339,20 +307,6 @@ export default function ExamSchedulesPage() {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Room *">
-              <Input placeholder="e.g. Main Hall" value={slot.room} onChange={(e) => setSlot((s) => ({ ...s, room: e.target.value }))} required />
-            </Field>
-            <Field label="Invigilator">
-              <Select value={slot.invigilator} onChange={(e) => setSlot((s) => ({ ...s, invigilator: e.target.value }))}>
-                <option value="">Unassigned</option>
-                {staff.map((x) => (
-                  <option key={x.id}>{x.name}</option>
-                ))}
-              </Select>
-            </Field>
           </div>
 
           {error && (
