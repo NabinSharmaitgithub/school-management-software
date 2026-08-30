@@ -8,6 +8,7 @@ import {
   listRouteAssignments,
   updateAssignment,
   addAssignment,
+  deleteAssignment,
   listVehicles,
   addVehicle,
   logService,
@@ -176,6 +177,18 @@ export default function TransportPage() {
     load();
   }
 
+  async function onRemoveAssignment(studentId: string) {
+    const existing = byStudent.get(studentId);
+    if (!existing) return;
+    await deleteAssignment(existing.id);
+    setSelected((cur) => {
+      const next = new Set(cur);
+      next.delete(studentId);
+      return next;
+    });
+    load();
+  }
+
   const toggleSelected = (id: string) => {
     setSelected((cur) => {
       const next = new Set(cur);
@@ -203,7 +216,7 @@ export default function TransportPage() {
         pickup_stop: bulkPickup || undefined,
         drop_stop: "School Gate",
         status: (fits ? "assigned" : "conflict") as RouteAssignment["status"],
-        monthly_fee: (existing?.monthly_fee ?? Number(feeInput)) || 50,
+        monthly_fee: Number(feeInput) || existing?.monthly_fee || 50,
       };
       if (existing) {
         await updateAssignment(existing.id, data);
@@ -236,7 +249,7 @@ export default function TransportPage() {
       pickup_stop: assignStop || undefined,
       drop_stop: "School Gate",
       status: (fits ? "assigned" : "conflict") as RouteAssignment["status"],
-      monthly_fee: (existing?.monthly_fee ?? Number(feeInput)) || 50,
+      monthly_fee: Number(feeInput) || existing?.monthly_fee || 50,
     };
     if (existing) {
       await updateAssignment(existing.id, data);
@@ -478,6 +491,14 @@ export default function TransportPage() {
                     <option key={s.name} value={s.name}>{s.name}</option>
                   ))}
                 </Select>
+                <Input
+                  className="!w-24"
+                  type="number"
+                  min={0}
+                  value={feeInput}
+                  onChange={(e) => setFeeInput(e.target.value)}
+                  placeholder="Fee ₹"
+                />
               </div>
 
               <div className="overflow-x-auto">
@@ -543,16 +564,24 @@ export default function TransportPage() {
                             {row.status === "unassigned" && <StatusPill tone="neutral">Unassigned</StatusPill>}
                           </td>
                           <td className="py-3 text-right">
+                            <div className="flex justify-end gap-2">
                             <GlassButton
                               variant="ghost"
                               onClick={() => {
                                 setAssignFor(row.student_id);
                                 setAssignRoute(row.route_id ?? "");
                                 setAssignStop(row.pickup_stop ?? "");
+                                setFeeInput(String(row.monthly_fee ?? 50));
                               }}
                             >
-                              {r ? "Change" : "Assign"}
+                              {r ? "Edit" : "Assign"}
                             </GlassButton>
+                            {r && (
+                              <GlassButton variant="danger" onClick={() => onRemoveAssignment(row.student_id)}>
+                                Remove
+                              </GlassButton>
+                            )}
+                          </div>
                           </td>
                         </tr>
                       );
@@ -772,6 +801,9 @@ export default function TransportPage() {
                 <option key={s.name} value={s.name}>{s.name}</option>
               ))}
             </Select>
+          </Field>
+          <Field label="Monthly Fee (₹)">
+            <Input type="number" min={0} value={feeInput} onChange={(e) => setFeeInput(e.target.value)} />
           </Field>
           {error && (
             <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{error}</p>
