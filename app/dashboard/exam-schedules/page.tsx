@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   listClasses,
   listSubjects,
@@ -9,6 +11,7 @@ import {
   listExamSessions,
   addExamSession,
   deleteExamSession,
+  getSchoolSettings,
 } from "@/lib/data";
 import type { Exam, ExamSession, Subject, Class } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
@@ -35,6 +38,13 @@ function fmtDate(date: string) {
   if (parts.length !== 3) return date;
   const d = new Date(date + "T00:00:00");
   return `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}`;
+}
+
+function fmtDateFull(date: string) {
+  const parts = date.split("-");
+  if (parts.length !== 3) return date;
+  const d = new Date(date + "T00:00:00");
+  return `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "long" })} ${d.getFullYear()}`;
 }
 
 export default function ExamSchedulesPage() {
@@ -196,6 +206,115 @@ export default function ExamSchedulesPage() {
     }
   }
 
+  async function onDownloadPDF() {
+    const exam = exams.find((x) => x.id === examId);
+    if (!exam || sorted.length === 0) return;
+    const settings = await getSchoolSettings();
+    const dates = sorted.map((s) => s.date).sort();
+    const startDate = dates[0];
+    const endDate = dates[dates.length - 1];
+    const classNames = Array.from(new Set(sorted.flatMap((s) => s.class_ids))).map(className);
+    const timings = Array.from(new Set(sorted.map((s) => `${s.start} – ${s.end}`)));
+    const venues = Array.from(new Set(sorted.map((s) => s.room).filter((r): r is string => !!r)));
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const M = 14;
+    const W = 210;
+    const primary = settings.primary_color || "#6366F1";
+    let y = 18;
+
+    // Header: logo (school initial in a circle) + name, horizontally
+    doc.setFillColor(primary);
+    doc.circle(M + 7, y - 2, 7, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text((settings.school_name[0] ?? "S").toUpperCase(), M + 7, y, { align: "center" });
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(18);
+    doc.text(settings.school_name, M + 18, y);
+    y += 9;
+
+    // Divider only below the body area, clear of the logo/name row
+    doc.setDrawColor(primary);
+    doc.setLineWidth(0.6);
+    doc.line(M, y, W - M, y);
+    y += 8;
+
+    // Notice text (auto-filled from exam data)
+    const yr = exam.academic_year.replace(/\s+/g, " ");
+    const notice =
+      `This is to notify all students, parents, and faculty members that the ${exam.name} Examination ` +
+      `for the academic session ${yr} is scheduled to commence on ${fmtDateFull(startDate)} and conclude on ${fmtDateFull(endDate)}.`;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    const noticeLines = doc.splitTextToSize(notice, W - M * 2) as string[];
+    doc.text(noticeLines, M, y);
+    y += doc.getTextDimensions(noticeLines.join("\n")).h + 8;
+
+    // Key Examination Details
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Key Examination Details", M, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    const details: [string, string][] = [
+      ["Classes / Grades:", classNames.join(", ") || "—"],
+      ["Exam Timings:", timings.join(", ") || "—"],
+      ["Venue:", venues.join(", ") || "—"],
+    ];
+    for (const [k, v] of details) {
+      const labelW = doc.getTextDimensions(k).w + 3;
+      doc.setFont("helvetica", "bold");
+      doc.text(k, M, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(v, W - M * 2 - labelW) as string[], M + labelW, y);
+      y += Math.max(5, doc.getTextDimensions(v).h + 1);
+    }
+    y += 6;
+
+    // Exam Routine Table
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Exam Routine", M, y);
+    y += 4;
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [["Date", "Day", "Subject", "Time", "Room / Venue"]],
+      body: sorted.map((s) => [
+        fmtDate(s.date),
+        dayName(s.date),
+        subjName(s.subject_id),
+        `${s.start} – ${s.end}`,
+        s.room || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: primary, fontSize: 10, fontStyle: "bold" },
+      styles: { fontSize: 10, cellPadding: 2.5 },
+      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 22 }, 2: { cellWidth: 66 }, 3: { cellWidth: 30 }, 4: { cellWidth: 30 } },
+    });
+
+    // Footer: fee dues notice
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(M, pageH - 28, W - M, pageH - 28);
+    const clearance = settings.fee_clearance_date ? fmtDateFull(settings.fee_clearance_date) : fmtDateFull(startDate);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    const feeNote =
+      `Fee Dues: All pending school/institutional dues prior to ${clearance} must be cleared ` +
+      `to receive the Admit Card from the administrative office.`;
+    doc.text(doc.splitTextToSize(feeNote, W - M * 2) as string[], M, pageH - 22);
+
+    const gradePart = gradeFilter === "All" ? "all" : `grade-${gradeFilter}`;
+    doc.save(`exam-schedule-${gradePart}-${exam.academic_year.replace(/\s+/g, "-")}.pdf`);
+  }
+
   return (
     <div className="space-y-6">
       <header className="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
@@ -239,6 +358,10 @@ export default function ExamSchedulesPage() {
               <GlassButton variant="ghost" onClick={() => setBulkOpen(true)}>
                 <span className="material-symbols-outlined text-lg">playlist_add</span>
                 Bulk Add
+              </GlassButton>
+              <GlassButton variant="ghost" onClick={onDownloadPDF}>
+                <span className="material-symbols-outlined text-lg">download</span>
+                Download PDF
               </GlassButton>
             </div>
           )}

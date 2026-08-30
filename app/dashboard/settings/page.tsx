@@ -63,7 +63,7 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [savedAt, setSavedAt] = useState("");
 
-  const [form, setForm] = useState({ school_name: "", school_address: "", timezone: TIMEZONES[0], currency: CURRENCIES[0] });
+  const [form, setForm] = useState({ school_name: "", school_address: "", timezone: TIMEZONES[0], currency: CURRENCIES[0], fee_clearance_date: "" });
   const [primary, setPrimary] = useState("#6366F1");
   const [logoName, setLogoName] = useState("");
   const [faviconName, setFaviconName] = useState("");
@@ -79,7 +79,7 @@ export default function SettingsPage() {
     try {
       const [s, fs, c] = await Promise.all([getSchoolSettings(), listFeeStructures(), listClasses()]);
       setSettings(s);
-      setForm({ school_name: s.school_name, school_address: s.school_address, timezone: s.timezone, currency: s.currency });
+      setForm({ school_name: s.school_name, school_address: s.school_address, timezone: s.timezone, currency: s.currency, fee_clearance_date: s.fee_clearance_date ?? "" });
       setPrimary(s.primary_color);
       setStructures(fs);
       setClasses(c.map((x) => ({ id: x.id, label: `${x.name} ${x.section}`.trim() })));
@@ -115,6 +115,7 @@ export default function SettingsPage() {
         school_address: form.school_address.trim(),
         timezone: form.timezone,
         currency: form.currency,
+        fee_clearance_date: form.fee_clearance_date,
       });
       setSettings((s) => (s ? { ...s, ...form } : s));
       setSavedAt("General settings saved.");
@@ -260,6 +261,9 @@ export default function SettingsPage() {
                     <Field label="School Address">
                       <Input value={form.school_address} onChange={(e) => setForm((f) => ({ ...f, school_address: e.target.value }))} />
                     </Field>
+                    <Field label="Admit Card Fee Clearance Date">
+                      <Input type="date" value={form.fee_clearance_date} onChange={(e) => setForm((f) => ({ ...f, fee_clearance_date: e.target.value }))} />
+                    </Field>
                   </div>
                 </div>
 
@@ -284,7 +288,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2 border-t border-on-surface/10">
-                  <GlassButton type="button" variant="ghost" onClick={() => setForm((s) => s && ({ school_name: settings?.school_name ?? "", school_address: settings?.school_address ?? "", timezone: settings?.timezone ?? "", currency: settings?.currency ?? "" }))}>
+                  <GlassButton type="button" variant="ghost" onClick={() => setForm((s) => s && ({ school_name: settings?.school_name ?? "", school_address: settings?.school_address ?? "", timezone: settings?.timezone ?? "", currency: settings?.currency ?? "", fee_clearance_date: settings?.fee_clearance_date ?? "" }))}>
                     Cancel
                   </GlassButton>
                   <GlassButton type="submit">Save Changes</GlassButton>

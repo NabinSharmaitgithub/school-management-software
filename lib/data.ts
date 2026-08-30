@@ -265,6 +265,7 @@ export type SchoolSettings = {
   timezone: string;
   currency: string;
   primary_color: string;
+  fee_clearance_date: string; // "YYYY-MM-DD" cutoff for admit-card issuance; empty = unset
 };
 
 export type FeeItem = {
@@ -799,6 +800,7 @@ const SETTINGS_DEFAULTS: Omit<SchoolSettings, "id"> = {
   timezone: "(GMT+05:30) India Standard Time",
   currency: "INR (₹)",
   primary_color: "#6366F1",
+  fee_clearance_date: "",
 };
 
 /** School-wide profile + branding settings. */
