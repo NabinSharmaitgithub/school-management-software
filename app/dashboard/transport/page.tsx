@@ -100,9 +100,6 @@ export default function TransportPage() {
   const assignedCount = (routeId: string) =>
     assignments.filter((a) => a.route_id === routeId).length;
 
-  const routeStopsList = (r: Route) =>
-    r.stops.map((s) => ({ name: s.name, stop_time: s.stop_time }));
-
   const assignedIds = new Set(assignments.map((a) => a.student_id));
 
   const classList = useMemo(
@@ -704,7 +701,7 @@ export default function TransportPage() {
       {/* ── Route stops modal ────────────────────────────────── */}
       <Modal open={!!stopsFor} onClose={() => setStopsFor("")} title={routeOf(stopsFor)?.name ?? "Route"}>
         <div className="space-y-3 mb-6">
-          {routeStopsList(routeOf(stopsFor) ?? ({} as Route)).map((s, i) => (
+          {(routeOf(stopsFor)?.stops ?? []).map((s, i) => (
             <div key={i} className="flex items-center gap-3 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
               <span className="material-symbols-outlined text-base text-primary/50">schedule</span>
               <span className="flex-1 text-on-surface/80">{s.name}</span>
