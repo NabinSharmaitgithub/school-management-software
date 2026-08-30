@@ -637,6 +637,16 @@ export async function sendThreadMessage(threadId: string, message: Omit<ThreadMe
   await updateDoc(ref, { messages: [...cur, message] });
 }
 
+/** Find a thread by conversation name, creating it if missing. Returns the thread id. */
+export async function ensureThread(name: string): Promise<string> {
+  const snap = await getDocs(col.threads());
+  const hit = snap.docs.find((d) => (d.data() as Thread).name === name);
+  if (hit) return hit.id;
+  const ref = doc(col.threads());
+  await setDoc(ref, { name, participants: [name], unread: 0, online: false, messages: [] });
+  return ref.id;
+}
+
 /** All hostel rooms, by block then room number. */
 export async function listRooms(): Promise<HostelRoom[]> {
   const snap = await getDocs(col.rooms());

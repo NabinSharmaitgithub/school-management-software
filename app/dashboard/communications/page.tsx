@@ -2,16 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ensureThread,
   listClasses,
   listAnnouncements,
   addAnnouncement,
   deleteAnnouncement,
   listBroadcasts,
   addBroadcast,
+  listStaff,
   listThreads,
   sendThreadMessage,
 } from "@/lib/data";
-import type { Announcement, Broadcast, Thread } from "@/lib/data";
+import type { Announcement, Broadcast, Staff, Thread } from "@/lib/data";
+import { useAuthEmail } from "@/components/dashboard/teacher-scope";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
 type Tab = "notice" | "broadcast" | "messenger";
@@ -69,7 +72,9 @@ export default function CommunicationsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [activeThread, setActiveThread] = useState<string>("");
+  const email = useAuthEmail();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -104,16 +109,18 @@ export default function CommunicationsPage() {
 
   const load = async () => {
     try {
-      const [c, a, b, t] = await Promise.all([
+      const [c, a, b, t, s] = await Promise.all([
         listClasses(),
         listAnnouncements(),
         listBroadcasts(),
         listThreads(),
+        listStaff(),
       ]);
       setClasses(c.map((x) => ({ id: x.id, name: x.name })));
       setAnnouncements(a);
       setBroadcasts(b);
       setThreads(t);
+      setStaff(s);
       setActiveThread((cur) => (cur && t.some((th) => th.id === cur) ? cur : (t[0]?.id ?? "")));
       setError("");
     } catch (e) {
@@ -134,6 +141,32 @@ export default function CommunicationsPage() {
   }, [announcements, noticeFilter]);
 
   const active = threads.find((t) => t.id === activeThread);
+
+  const myName = useMemo(() => {
+    if (!email) return "";
+    if (email === "admin@school.local") return "Admin";
+    return staff.find((s) => s.email === email)?.name ?? "Admin";
+  }, [email, staff]);
+
+  const roster = useMemo(
+    () =>
+      staff
+        .map((s) => ({ name: s.name, role: s.role }))
+        .concat([{ name: "Admin", role: "Administrator" }])
+        .filter((p) => !threads.some((t) => t.name === p.name)),
+    [staff, threads]
+  );
+
+  async function startConversation(name: string) {
+    setError("");
+    try {
+      const id = await ensureThread(name);
+      setActiveThread(id);
+      load();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
 
   async function onPost(e: React.FormEvent) {
     e.preventDefault();
@@ -231,7 +264,7 @@ export default function CommunicationsPage() {
     if (!activeThread || !draft.trim()) return;
     await sendThreadMessage(activeThread, {
       text: draft.trim(),
-      from: "You",
+      from: myName,
       at: new Date().toISOString(),
       mine: true,
     });
@@ -499,7 +532,7 @@ export default function CommunicationsPage() {
                     )}
                     {threads.map((t) => {
                       const last = t.messages[t.messages.length - 1];
-                      const latestText = last ? `${last.mine ? "You: " : ""}${last.text}` : "";
+                      const latestText = last ? `${last.from}: ${last.text}` : "";
                       const isActive = t.id === activeThread;
                       const initials = t.name
                         .split(" ")
@@ -544,6 +577,42 @@ export default function CommunicationsPage() {
                         </button>
                       );
                     })}
+                    {roster.length > 0 && (
+                      <>
+                        <p className="px-4 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wide text-on-surface/40">
+                          Start a conversation
+                        </p>
+                        {roster.map((p) => (
+                          <button
+                            key={p.name}
+                            onClick={() => startConversation(p.name)}
+                            className={`w-full text-left px-4 py-3 flex items-start gap-3 transition border-b border-white/40 ${
+                              activeThread === p.name ? "bg-primary/10" : "hover:bg-white/40"
+                            }`}
+                          >
+                            <span className="shrink-0 w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold text-sm">
+                              {p.name
+                                .split(" ")
+                                .slice(0, 2)
+                                .map((w) => w[0])
+                                .join("")
+                                .toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="font-medium text-sm text-on-surface truncate">
+                                {p.name}
+                              </span>
+                              <span className="block text-xs text-on-surface/50 truncate">
+                                {p.role}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-on-surface/40">
+                              <span className="material-symbols-outlined text-base">add_comment</span>
+                            </span>
+                          </button>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -591,9 +660,13 @@ export default function CommunicationsPage() {
                                 : "bg-white/70 border border-white/80 text-on-surface rounded-bl-md"
                             }`}
                           >
-                            {!m.mine && (
-                              <p className="text-[10px] font-medium text-primary mb-0.5">{m.from}</p>
-                            )}
+                            <p
+                              className={`text-[10px] font-medium mb-0.5 ${
+                                m.mine ? "text-white/70" : "text-primary"
+                              }`}
+                            >
+                              {m.from}
+                            </p>
                             <p>{m.text}</p>
                             <p
                               className={`text-[10px] mt-1 flex items-center gap-1 ${
