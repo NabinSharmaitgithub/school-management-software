@@ -20,6 +20,7 @@ const YEARS = (() => {
 type Row = {
   student: Student;
   marks: string;
+  practical: string;
   status: BulkMarkStatus;
   remarks: string;
 };
@@ -56,6 +57,8 @@ export default function BulkMarksPage() {
   const [subjectId, setSubjectId] = useState("");
   const [examTerm, setExamTerm] = useState(TERMS[0]);
   const [maxMarks, setMaxMarks] = useState("100");
+  const [hasPractical, setHasPractical] = useState(false);
+  const [maxPracticalMarks, setMaxPracticalMarks] = useState("25");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,6 +110,10 @@ export default function BulkMarksPage() {
   }, [visibleSubjects, subjectId]);
 
   const max = useMemo(() => Number(maxMarks) || 0, [maxMarks]);
+  const maxPrac = useMemo(
+    () => (hasPractical ? Number(maxPracticalMarks) || 0 : 0),
+    [hasPractical, maxPracticalMarks]
+  );
 
   useEffect(() => {
     if (!classId) {
@@ -123,7 +130,7 @@ export default function BulkMarksPage() {
           const bn = parseInt(b.roll_number, 10) || 0;
           return an - bn || a.name.localeCompare(b.name);
         });
-        setRows(sorted.map((s) => ({ student: s, marks: "", status: "marked", remarks: "" })));
+        setRows(sorted.map((s) => ({ student: s, marks: "", practical: "", status: "marked", remarks: "" })));
         setError("");
       })
       .catch(() => setError("Could not load students for this class."))
@@ -139,12 +146,15 @@ export default function BulkMarksPage() {
 
   const errors = useMemo(
     () =>
-      rows.map((r) =>
-        r.status === "marked" ? validateMarks(r.marks, r.status === "marked" ? max : max) : ""
-      ),
+      rows.map((r) => (r.status === "marked" ? validateMarks(r.marks, max) : "")),
     [rows, max]
   );
-  const invalidCount = errors.filter((e) => e !== "").length;
+  const pracErrors = useMemo(
+    () => rows.map((r) => (r.status === "marked" ? validateMarks(r.practical, maxPrac) : "")),
+    [rows, maxPrac]
+  );
+  const invalidCount =
+    errors.filter((e) => e !== "").length + pracErrors.filter((e) => e !== "").length;
 
   function applyCsv(file: File) {
     const reader = new FileReader();
@@ -159,6 +169,7 @@ export default function BulkMarksPage() {
       const rollIdx = header.findIndex((h) => /roll/.test(h) && !/remarks/.test(h));
       const nameIdx = header.findIndex((h) => /name|student/.test(h));
       const marksIdx = header.findIndex((h) => /mark|score|obtained/.test(h));
+      const pracIdx = header.findIndex((h) => /practical|prac/.test(h));
       const remarkIdx = header.findIndex((h) => /remark|note/.test(h));
       if (marksIdx < 0 || (rollIdx < 0 && nameIdx < 0)) {
         setError("CSV must have a Marks column and a Roll or Name column.");
@@ -175,7 +186,11 @@ export default function BulkMarksPage() {
           if (!row && nameIdx >= 0) row = byName.get((r[nameIdx] ?? "").trim().toLowerCase());
           if (!row) continue;
           const idx = next.indexOf(row);
-          patchImmediate(next, idx, { marks: r[marksIdx] ?? "", remarks: (r[remarkIdx] ?? "").trim() });
+          patchImmediate(next, idx, {
+            marks: r[marksIdx] ?? "",
+            practical: pracIdx >= 0 ? r[pracIdx] ?? "" : row.practical,
+            remarks: (r[remarkIdx] ?? "").trim(),
+          });
         }
         return next;
       });
@@ -190,9 +205,17 @@ export default function BulkMarksPage() {
 
   function downloadTemplate() {
     if (!rows.length) return;
-    const lines = ["Roll,Marks,Remarks"];
+    const headers = ["Roll", "Marks", ...(hasPractical ? ["Practical"] : []), "Remarks"];
+    const lines = [headers.join(",")];
     for (const r of rows)
-      lines.push(`${r.student.roll_number},"${String(r.remarks).replace(/"/g, '""')}",`);
+      lines.push(
+        [
+          r.student.roll_number,
+          r.marks,
+          ...(hasPractical ? [r.practical] : []),
+          `"${String(r.remarks).replace(/"/g, '""')}"`,
+        ].join(",")
+      );
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -205,7 +228,7 @@ export default function BulkMarksPage() {
   async function onSave() {
     setError("");
     setSavedMsg("");
-    if (!classId || !subjectId || !max || max <= 0) {
+    if (!classId || !subjectId || !max || max <= 0 || (hasPractical && maxPrac <= 0)) {
       setError("Select a class, section, subject and a positive max marks first.");
       return;
     }
@@ -217,7 +240,9 @@ export default function BulkMarksPage() {
     try {
       await bulkSetMarks(
         rows.map((r, i) => {
-          const info = r.status === "marked" ? gradeInfo(Number(r.marks), max) : null;
+          const obtained = Number(r.marks) + (hasPractical ? Number(r.practical) || 0 : 0);
+          const total = hasPractical ? max + maxPrac : max;
+          const info = r.status === "marked" ? gradeInfo(obtained, total) : null;
           return {
             student_id: r.student.id,
             subject_id: subjectId,
@@ -227,6 +252,9 @@ export default function BulkMarksPage() {
             academic_year: academicYear,
             max_marks: max,
             marks_obtained: r.status === "marked" ? Number(r.marks) : undefined,
+            has_practical: hasPractical,
+            max_practical_marks: hasPractical ? maxPrac : undefined,
+            practical_marks: r.status === "marked" && hasPractical ? Number(r.practical) : undefined,
             percentage: info?.pct,
             grade: info?.grade,
             status: r.status,
@@ -288,7 +316,7 @@ export default function BulkMarksPage() {
               setSavedMsg("");
               setConfirmOpen(true);
             }}
-            disabled={rows.length === 0 || invalidCount > 0 || !classId || !subjectId || max <= 0}
+            disabled={rows.length === 0 || invalidCount > 0 || !classId || !subjectId || max <= 0 || (hasPractical && maxPrac <= 0)}
           >
             <span className="material-symbols-outlined text-lg">save</span>
             Save All
@@ -304,7 +332,7 @@ export default function BulkMarksPage() {
       </header>
 
       <GlassCard className="p-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-8 gap-4">
           <Field label="Academic year">
             <Select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)}>
               {YEARS.map((y) => (
@@ -355,6 +383,27 @@ export default function BulkMarksPage() {
               required
             />
           </Field>
+          <Field label="Has practical">
+            <Select
+              value={hasPractical ? "yes" : "no"}
+              onChange={(e) => setHasPractical(e.target.value === "yes")}
+            >
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Select>
+          </Field>
+          {hasPractical && (
+            <Field label="Max practical marks">
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                value={maxPracticalMarks}
+                onChange={(e) => setMaxPracticalMarks(e.target.value)}
+                required
+              />
+            </Field>
+          )}
         </div>
       </GlassCard>
 
@@ -379,6 +428,7 @@ export default function BulkMarksPage() {
                 <th className="pb-3 pr-4">Roll</th>
                 <th className="pb-3 pr-4">Student</th>
                 <th className="pb-3 pr-4 w-28">Marks / {max}</th>
+                {hasPractical && <th className="pb-3 pr-4 w-28">Practical / {maxPrac}</th>}
                 <th className="pb-3 pr-4 w-36">Status</th>
                 <th className="pb-3 pr-4">%</th>
                 <th className="pb-3 pr-4">Grade</th>
@@ -388,7 +438,10 @@ export default function BulkMarksPage() {
             <tbody>
               {rows.map((r, i) => {
                 const err = errors[i];
-                const info = r.status === "marked" && !err ? gradeInfo(Number(r.marks), max) : null;
+                const pracErr = pracErrors[i];
+                const obtained = Number(r.marks) + (hasPractical ? Number(r.practical) || 0 : 0);
+                const total = hasPractical ? max + maxPrac : max;
+                const info = r.status === "marked" && !err && !pracErr ? gradeInfo(obtained, total) : null;
                 return (
                   <tr key={r.student.id} className="border-t border-on-surface/10 hover:bg-white/40">
                     <td className="py-2 pr-4 text-on-surface/70">{r.student.roll_number}</td>
@@ -405,6 +458,20 @@ export default function BulkMarksPage() {
                       />
                       {err && <p className="text-[10px] text-error mt-0.5">{err}</p>}
                     </td>
+                    {hasPractical && (
+                      <td className="py-2 pr-4">
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={r.practical}
+                          disabled={r.status !== "marked"}
+                          onChange={(e) => patchRow(i, { practical: e.target.value })}
+                          className={`w-full ${pracErr ? "!border-rose !ring-rose/30 border-2" : ""}`}
+                          placeholder={r.status === "marked" ? "0" : "—"}
+                        />
+                        {pracErr && <p className="text-[10px] text-error mt-0.5">{pracErr}</p>}
+                      </td>
+                    )}
                     <td className="py-2 pr-4">
                       <Select
                         value={r.status}

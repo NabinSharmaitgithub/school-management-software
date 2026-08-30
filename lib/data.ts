@@ -61,6 +61,9 @@ export type BulkMarkEntry = {
   academic_year: string;
   max_marks: number;
   marks_obtained?: number;
+  has_practical?: boolean;
+  max_practical_marks?: number;
+  practical_marks?: number;
   percentage?: number;
   grade?: string;
   status: BulkMarkStatus;
