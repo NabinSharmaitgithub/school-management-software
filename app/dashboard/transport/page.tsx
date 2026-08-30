@@ -7,6 +7,7 @@ import {
   deleteRoute,
   listRouteAssignments,
   updateAssignment,
+  addAssignment,
   listVehicles,
   addVehicle,
   logService,
@@ -100,21 +101,41 @@ export default function TransportPage() {
   const assignedCount = (routeId: string) =>
     assignments.filter((a) => a.route_id === routeId).length;
 
-  const assignedIds = new Set(assignments.map((a) => a.student_id));
-
   const classList = useMemo(
     () => Array.from(new Set(students.map((s) => cnames[s.class_id] ?? ""))).filter(Boolean).sort(),
     [students, cnames]
   );
 
-  const filteredAssignments = useMemo(() => {
-    return assignments.filter((a) => {
+  const byStudent = useMemo(
+    () => new Map(assignments.map((a) => [a.student_id, a])),
+    [assignments]
+  );
+
+  const rows = useMemo(
+    () =>
+      students.map((s) => {
+        const a = byStudent.get(s.id);
+        return {
+          id: a?.id ?? `new-${s.id}`,
+          student_id: s.id,
+          route_id: a?.route_id,
+          pickup_stop: a?.pickup_stop,
+          drop_stop: a?.drop_stop,
+          monthly_fee: a?.monthly_fee,
+          status: a?.status ?? "unassigned",
+        };
+      }),
+    [students, byStudent]
+  );
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((a) => {
       if (routeFilter !== "All Routes" && a.route_id !== routeFilter) return false;
       if (classFilter !== "All Classes" && studentClass(a.student_id) !== classFilter) return false;
       if (search && !(names[a.student_id] ?? "").toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [assignments, routeFilter, classFilter, search, names]);
+  }, [rows, routeFilter, classFilter, search, names]);
 
   async function onAddRoute(e: React.FormEvent) {
     e.preventDefault();
@@ -171,20 +192,24 @@ export default function TransportPage() {
       setError("Choose a route first.");
       return;
     }
-    const ids = selected.size > 0 ? Array.from(selected) : filteredAssignments.map((a) => a.id);
+    const ids = selected.size > 0 ? Array.from(selected) : filteredRows.map((r) => r.student_id);
     const target = Number(route.capacity);
     let used = assignedCount(route.id);
-    for (const id of ids) {
-      const a = assignments.find((x) => x.id === id);
-      if (!a) continue;
+    for (const sid of ids) {
+      const existing = byStudent.get(sid);
       const fits = used < target;
-      await updateAssignment(id, {
+      const data = {
         route_id: route.id,
         pickup_stop: bulkPickup || undefined,
         drop_stop: "School Gate",
-        status: fits ? "assigned" : "conflict",
-        monthly_fee: a.monthly_fee || Number(feeInput) || 50,
-      });
+        status: (fits ? "assigned" : "conflict") as RouteAssignment["status"],
+        monthly_fee: (existing?.monthly_fee ?? Number(feeInput)) || 50,
+      };
+      if (existing) {
+        await updateAssignment(existing.id, data);
+      } else {
+        await addAssignment({ student_id: sid, ...data });
+      }
       if (fits) used += 1;
     }
     setBulkRouteId("");
@@ -204,13 +229,20 @@ export default function TransportPage() {
       setError("No student selected.");
       return;
     }
+    const existing = byStudent.get(assignFor);
     const fits = assignedCount(route.id) < Number(route.capacity);
-    await updateAssignment(assignFor, {
+    const data = {
       route_id: route.id,
       pickup_stop: assignStop || undefined,
       drop_stop: "School Gate",
-      status: fits ? "assigned" : "conflict",
-    });
+      status: (fits ? "assigned" : "conflict") as RouteAssignment["status"],
+      monthly_fee: (existing?.monthly_fee ?? Number(feeInput)) || 50,
+    };
+    if (existing) {
+      await updateAssignment(existing.id, data);
+    } else {
+      await addAssignment({ student_id: assignFor, ...data });
+    }
     setAssignFor("");
     setAssignRoute("");
     setAssignStop("");
@@ -455,9 +487,9 @@ export default function TransportPage() {
                       <th className="pb-3 pr-3">
                         <input
                           type="checkbox"
-                          checked={filteredAssignments.length > 0 && filteredAssignments.every((a) => selected.has(a.id))}
+                          checked={filteredRows.length > 0 && filteredRows.every((r) => selected.has(r.student_id))}
                           onChange={(e) =>
-                            setSelected(e.target.checked ? new Set(filteredAssignments.map((a) => a.id)) : new Set())
+                            setSelected(e.target.checked ? new Set(filteredRows.map((r) => r.student_id)) : new Set())
                           }
                         />
                       </th>
@@ -470,52 +502,53 @@ export default function TransportPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAssignments.length === 0 && (
+                    {filteredRows.length === 0 && (
                       <tr>
                         <td className="py-3 text-on-surface/60" colSpan={7}>
                           No students match the current filters.
                         </td>
                       </tr>
                     )}
-                    {filteredAssignments.map((a) => {
-                      const r = routeOf(a.route_id);
+                    {filteredRows.map((row) => {
+                      const r = routeOf(row.route_id);
                       return (
-                        <tr key={a.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                        <tr key={row.id} className="border-t border-on-surface/10 hover:bg-white/40">
                           <td className="py-3 pr-3">
                             <input
                               type="checkbox"
-                              checked={selected.has(a.id)}
-                              onChange={() => toggleSelected(a.id)}
+                              checked={selected.has(row.student_id)}
+                              onChange={() => toggleSelected(row.student_id)}
                             />
                           </td>
                           <td className="py-3 pr-4">
-                            <p className="font-medium text-on-surface">{names[a.student_id] ?? a.student_id}</p>
+                            <p className="font-medium text-on-surface">{names[row.student_id] ?? row.student_id}</p>
                             <p className="text-[11px] text-on-surface/50">
-                              {studentClass(a.student_id)}
+                              {studentClass(row.student_id)}
                             </p>
                           </td>
                           <td className="py-3 pr-4 hidden sm:table-cell text-on-surface/70">
                             {r?.name ?? "Unassigned"}
                           </td>
                           <td className="py-3 pr-4 hidden md:table-cell text-[11px] text-on-surface/60">
-                            {a.pickup_stop ?? "—"} → {a.drop_stop ?? "School Gate"}
+                            {row.pickup_stop ?? "—"} → {row.drop_stop ?? "School Gate"}
                           </td>
                           <td className="py-3 pr-4 text-right text-on-surface/80">
-                            ₹{a.monthly_fee.toLocaleString("en-IN")}
+                            {row.monthly_fee ? `₹${row.monthly_fee.toLocaleString("en-IN")}` : "—"}
                           </td>
                           <td className="py-3 pr-4">
-                            {a.status === "assigned" && <StatusPill tone="success">Assigned</StatusPill>}
-                            {a.status === "draft" && <StatusPill tone="primary">Draft</StatusPill>}
-                            {a.status === "pending" && <StatusPill tone="neutral">Pending</StatusPill>}
-                            {a.status === "conflict" && <StatusPill tone="error">Stop Full</StatusPill>}
+                            {row.status === "assigned" && <StatusPill tone="success">Assigned</StatusPill>}
+                            {row.status === "draft" && <StatusPill tone="primary">Draft</StatusPill>}
+                            {row.status === "pending" && <StatusPill tone="neutral">Pending</StatusPill>}
+                            {row.status === "conflict" && <StatusPill tone="error">Stop Full</StatusPill>}
+                            {row.status === "unassigned" && <StatusPill tone="neutral">Unassigned</StatusPill>}
                           </td>
                           <td className="py-3 text-right">
                             <GlassButton
                               variant="ghost"
                               onClick={() => {
-                                setAssignFor(a.id);
-                                setAssignRoute(a.route_id ?? "");
-                                setAssignStop(a.pickup_stop ?? "");
+                                setAssignFor(row.student_id);
+                                setAssignRoute(row.route_id ?? "");
+                                setAssignStop(row.pickup_stop ?? "");
                               }}
                             >
                               {r ? "Change" : "Assign"}
@@ -530,7 +563,7 @@ export default function TransportPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
                 <p className="text-xs text-on-surface/50">
-                  Showing {filteredAssignments.length} of {assignments.length} students
+                  Showing {filteredRows.length} of {rows.length} students
                 </p>
                 {selected.size > 0 && (
                   <GlassButton variant="ghost" onClick={() => setSelected(new Set())}>Clear selection</GlassButton>
@@ -722,7 +755,7 @@ export default function TransportPage() {
       <Modal open={!!assignFor} onClose={() => setAssignFor("")} title="Assign Route">
         <div className="space-y-4">
           <p className="mb-4 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm text-on-surface/80">
-            {assignFor ? (names[assignments.find((a) => a.id === assignFor)?.student_id ?? ""] ?? "") : ""}
+            {assignFor ? (names[assignFor] ?? "") : ""}
           </p>
           <Field label="Route">
             <Select value={assignRoute} onChange={(e) => setAssignRoute(e.target.value)}>
