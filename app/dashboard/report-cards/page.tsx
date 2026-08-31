@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import {
   listClasses,
   listStudents,
@@ -46,6 +48,8 @@ export default function ReportCardsPage() {
   const [inclAttendance, setInclAttendance] = useState(true);
   const [inclRemarks, setInclRemarks] = useState(true);
   const [inclRank, setInclRank] = useState(true);
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -141,8 +145,45 @@ export default function ReportCardsPage() {
   const className = classes.find((c) => c.id === classId)?.name ?? "";
   const section = classes.find((c) => c.id === classId)?.section ?? "";
 
-  function onPrint() {
-    window.print();
+  async function onPrint() {
+    const el = reportRef.current;
+    if (!el) return;
+    setDownloading(true);
+    try {
+      // Render at higher resolution so text stays crisp; we measure the REAL
+      // rendered height here, never a fixed A4-multiple.
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff" });
+      const img = canvas.toDataURL("image/jpeg", 0.95);
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();   // 595.28 pt
+      const pageH = pdf.internal.pageSize.getHeight();  // 841.89 pt
+
+      // Fit width -> exact px->pt ratio from the real canvas.
+      const imgW = pageW;
+      const imgH = (canvas.height * pageW) / canvas.width;
+
+      // Page count derived from actual content height (never a fixed A4-multiple).
+      // ceil() never leaves a trailing blank page: the last page always draws
+      // whatever real content overflows, and a content-height exact multiple
+      // yields exactly that many pages.
+      const pages = Math.max(1, Math.ceil(imgH / pageH));
+      for (let i = 0; i < pages; i++) {
+        if (i > 0) pdf.addPage();
+        pdf.addImage(img, "JPEG", 0, -(i * pageH), imgW, imgH);
+      }
+
+      console.log(
+        `Report card PDF: canvas=${canvas.width}x${canvas.height}px, ` +
+        `content height=${imgH.toFixed(1)}pt, page height=${pageH}pt, pages=${pdf.getNumberOfPages()}`
+      );
+
+      pdf.save(`report-card-${student?.name?.replace(/\s+/g, "_") ?? "student"}.pdf`);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -152,9 +193,9 @@ export default function ReportCardsPage() {
           <h1 className="text-xl font-semibold">Report Card Studio</h1>
           <p className="text-sm text-on-surface/60">School profile, and generate class reports</p>
         </div>
-        <GlassButton onClick={onPrint}>
+        <GlassButton onClick={onPrint} disabled={downloading}>
           <span className="material-symbols-outlined text-lg">download</span>
-          Download PDF
+          {downloading ? "Generating…" : "Download PDF"}
         </GlassButton>
       </header>
 
@@ -228,7 +269,7 @@ export default function ReportCardsPage() {
           ) : loading ? (
             <GlassCard className="p-8 text-center text-sm text-on-surface/60">Loading…</GlassCard>
           ) : (
-            <div key={student.id} className="bg-white rounded-xl border border-white/80 shadow-lg p-8 max-w-[850px] mx-auto">
+            <div ref={reportRef} key={`print-${student.id}`} className="bg-white rounded-xl border border-white/80 shadow-lg p-8 max-w-[850px] mx-auto print:shadow-none print:border-0 print:p-0">
               {/* Header */}
               <div className="flex items-center justify-between border-b-2 border-slate-900 pb-5 mb-6">
                 <div className="flex items-center gap-5">
@@ -363,7 +404,6 @@ export default function ReportCardsPage() {
           )}
         </div>
       </div>
-      <style>{`@media print { body * { visibility: hidden; } .print\\:space-y-0 > *, header, aside { display: none !important; } main, main * { visibility: visible; } main { position: absolute; inset: 0; overflow: visible; } main > div { visibility: visible; } main > div > div:last-child > div:last-child { visibility: visible; } }`}</style>
     </div>
   );
 }
