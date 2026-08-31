@@ -7,32 +7,37 @@ import {
   listSubjects,
   listMarks,
   listAttendance,
+  getSchoolSettings,
 } from "@/lib/data";
-import type { Class, Subject, Mark, AttendanceEntry } from "@/lib/data";
+import type { Class, Subject, Mark, AttendanceEntry, SchoolSettings } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Select } from "@/components/ui";
 
 type Style = "Modern" | "Classic" | "Compact";
 
-const GRADE_BANDS: [number, string][] = [
-  [90, "A+"],
-  [80, "A"],
-  [70, "B+"],
-  [60, "B"],
-  [50, "C"],
-  [35, "D"],
-  [0, "F"],
+const GRADE_BANDS: [number, string, number][] = [
+  [90, "A+", 4.0],
+  [80, "A", 3.6],
+  [70, "B+", 3.2],
+  [60, "B", 2.8],
+  [50, "C", 2.4],
+  [35, "D", 2.0],
+  [0, "F", 0.0],
 ];
 
 function grade(pct: number) {
   return GRADE_BANDS.find(([t]) => pct >= t)?.[1] ?? "F";
 }
+function gpa(pct: number) {
+  return GRADE_BANDS.find(([t]) => pct >= t)?.[2] ?? 0;
+}
 
 export default function ReportCardsPage() {
   const [classes, setClasses] = useState<Class[]>([]);
-  const [students, setStudents] = useState<{ id: string; name: string; roll_number: string; class_id: string }[]>([]);
+  const [students, setStudents] = useState<{ id: string; name: string; roll_number: string; class_id: string; guardian?: string; phone?: string; gender?: string; address?: string }[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
+  const [settings, setSettings] = useState<SchoolSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,20 +51,22 @@ export default function ReportCardsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [c, st, su, m, a] = await Promise.all([
+        const [c, st, su, m, a, set] = await Promise.all([
           listClasses(),
           listStudents(),
           listSubjects(),
           listMarks(),
           listAttendance(),
+          getSchoolSettings(),
         ]);
         setClasses(c);
         setStudents(
-          st.map((s) => ({ id: s.id, name: s.name, roll_number: s.roll_number, class_id: s.class_id }))
+          st.map((s) => ({ id: s.id, name: s.name, roll_number: s.roll_number, class_id: s.class_id, guardian: s.guardian, phone: s.phone, gender: s.gender, address: s.address }))
         );
         setSubjects(su);
         setMarks(m);
         setAttendance(a);
+        setSettings(set);
         setClassId(c[0]?.id ?? "");
       } catch (e) {
         setError((e as Error).message);
@@ -93,13 +100,23 @@ export default function ReportCardsPage() {
       .map((sub) => {
         const m = marks.find((x) => x.student_id === (student as { id: string }).id && x.subject_id === sub.id && x.exam_term === term);
         if (!m) return null;
-        const pct = m.max_marks ? (m.marks_obtained / m.max_marks) * 100 : 0;
-        return { subject: sub.name, obtained: m.marks_obtained, max: m.max_marks, pct, grade: grade(pct) };
+        const theory = m.marks_obtained;
+        const practical = m.has_practical ? (m.practical_marks ?? 0) : 0;
+        const maxTheory = m.max_marks;
+        const maxPrac = m.has_practical ? (m.max_practical_marks ?? 0) : 0;
+        const total = theory + practical;
+        const maxT = maxTheory + maxPrac;
+        const pct = maxT ? (total / maxT) * 100 : 0;
+        return { subject: sub.name, theory, practical, total, max: maxT, pct, grade: grade(pct), gpa: gpa(pct) };
       })
-      .filter(Boolean) as { subject: string; obtained: number; max: number; pct: number; grade: string }[];
+      .filter(Boolean) as { subject: string; theory: number; practical: number; total: number; max: number; pct: number; grade: string; gpa: number }[];
   }, [student, subjects, marks, term]);
 
-  const overall = rows.length ? Math.round(rows.reduce((s, r) => s + r.pct, 0) / rows.length) : 0;
+  const sumTotal = rows.reduce((s, r) => s + r.total, 0);
+  const sumMax = rows.reduce((s, r) => s + r.max, 0);
+  const overall = sumMax ? Math.round((sumTotal / sumMax) * 100) : 0;
+  const overallGpa = rows.length ? Math.round((rows.reduce((s, r) => s + r.gpa, 0) / rows.length) * 100) / 100 : 0;
+  const passed = rows.every((r) => r.pct >= 35);
 
   const attendancePct = useMemo(() => {
     if (!student) return 100;
@@ -231,110 +248,132 @@ export default function ReportCardsPage() {
           ) : loading ? (
             <GlassCard className="p-8 text-center text-sm text-on-surface/60">Loading…</GlassCard>
           ) : (
-            <div className={style === "Classic" ? "bg-white rounded-xl border border-white/80 shadow-lg p-6" : style === "Compact" ? "bg-white rounded-xl border border-white/80 p-4" : "bg-gradient-to-br from-white to-white/80 backdrop-blur rounded-2xl border border-white shadow-xl p-6"}>
+            <div key={student.id} className="bg-white rounded-xl border border-white/80 shadow-lg p-8 max-w-[850px] mx-auto">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-on-surface/10 pb-4 mb-4">
-                <div>
-                  <p className="text-lg font-bold text-primary">{style === "Classic" ? "Springfield High School" : "Greenwood International School"}</p>
-                  <p className="text-xs text-on-surface/50">Excellence in Education · Official Academic Report</p>
+              <div className="flex items-center justify-between border-b-2 border-slate-900 pb-5 mb-6">
+                <div className="flex items-center gap-5">
+                  {settings?.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={settings.logo_url} alt="logo" className="w-[70px] h-[70px] rounded-full object-cover shadow" />
+                  ) : (
+                    <div className="w-[70px] h-[70px] rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-2xl">
+                      {(settings?.school_name ?? "S").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "S"}
+                    </div>
+                  )}
+                  <div>
+                    <h1 className="text-[26px] font-bold text-slate-900 leading-tight">{settings?.school_name ?? "School"}</h1>
+                    <p className="text-sm text-slate-500">{settings?.school_address ?? ""} · Academic Session {new Date().getFullYear() - 1}–{new Date().getFullYear()}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold">{term}</p>
-                  <p className="text-xs text-on-surface/50">{new Date().getFullYear()}</p>
+                  <h2 className="text-lg font-bold text-blue-600 uppercase tracking-wider">Grade Sheet</h2>
+                  <span className="text-xs text-slate-500">{term}</span>
                 </div>
               </div>
 
-              {/* Student info */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                <div>
-                  <p className="text-[10px] uppercase text-on-surface/40 font-semibold">Student Name</p>
-                  <p className="text-sm font-semibold text-on-surface">{student.name}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase text-on-surface/40 font-semibold">Student ID</p>
-                  <p className="text-sm font-medium text-on-surface">SHS-{student.roll_number}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase text-on-surface/40 font-semibold">Grade &amp; Section</p>
-                  <p className="text-sm font-medium text-on-surface">{className} · {section}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase text-on-surface/40 font-semibold">Roll Number</p>
-                  <p className="text-sm font-medium text-on-surface">{student.roll_number}</p>
+              {/* Student details */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Student Name</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.name}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Class & Roll No.</span>
+                    <span className="text-sm font-semibold text-slate-800">{className}{section ? `-${section}` : ""} (Roll: {student.roll_number})</span>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Father's Name</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.guardian ?? "—"}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Contact Number</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.phone ?? "—"}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Gender</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.gender ?? "—"}</span>
+                  </div>
+                  <div className="sm:col-span-3">
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Permanent Address</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.address ?? "—"}</span>
+                  </div>
                 </div>
               </div>
 
               {/* Marks table */}
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-on-surface/50 border-b border-on-surface/10">
-                    <th className="py-2">Subject</th>
-                    <th className="py-2 text-center">Marks</th>
-                    <th className="py-2 text-center">Max</th>
-                    <th className="py-2 text-center">%</th>
-                    <th className="py-2 text-center">Grade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.subject} className="border-b border-on-surface/5">
-                      <td className="py-2 font-medium">{r.subject}</td>
-                      <td className="py-2 text-center">{r.obtained}</td>
-                      <td className="py-2 text-center text-on-surface/50">{r.max}</td>
-                      <td className="py-2 text-center">{Math.round(r.pct)}%</td>
-                      <td className="py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-bold text-white" style={{ backgroundColor: gradeColor(r.grade) }}>
-                          {r.grade}
-                        </span>
-                      </td>
+              <div className="w-full overflow-x-auto mb-6">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="bg-slate-900 text-white">
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">S.N.</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide">Subject</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">Theory</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">Practical</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">Total</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">Percentage</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">Grade</th>
+                      <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">GPA</th>
                     </tr>
-                  ))}
-                  <tr className="font-semibold">
-                    <td className="py-2 pt-3">Overall Performance</td>
-                    <td colSpan={2} className="py-2 pt-3 text-center">{rows.length ? `${Math.round(rows.reduce((s, r) => s + r.obtained, 0))}/${rows.reduce((s, r) => s + r.max, 0)}` : "—"}</td>
-                    <td className="py-2 pt-3 text-center">{overall}%</td>
-                    <td className="py-2 pt-3 text-center text-primary">{grade(overall)}</td>
-                  </tr>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={r.subject} className={i % 2 === 0 ? "bg-slate-50" : ""}>
+                        <td className="py-3 px-3.5 text-sm border-b border-slate-200 text-center">{i + 1}</td>
+                        <td className="py-3 px-3.5 text-sm font-semibold border-b border-slate-200">{r.subject}</td>
+                        <td className="py-3 px-3.5 text-sm border-b border-slate-200 text-center">{r.theory}</td>
+                        <td className="py-3 px-3.5 text-sm border-b border-slate-200 text-center">{r.practical}</td>
+                        <td className="py-3 px-3.5 text-sm border-b border-slate-200 text-center">{r.total}</td>
+                        <td className="py-3 px-3.5 text-sm border-b border-slate-200 text-center">{r.pct.toFixed(2)}%</td>
+                        <td className="py-3 px-3.5 text-sm font-bold border-b border-slate-200 text-center">{r.grade}</td>
+                        <td className="py-3 px-3.5 text-sm border-b border-slate-200 text-center">{r.gpa.toFixed(1)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-              {/* Inclusions */}
-              {(inclAttendance || inclRank) && (
-                <div className="grid grid-cols-2 gap-3 mt-5">
-                  {inclAttendance && (
-                    <div className="rounded-lg bg-white/60 border border-white/80 px-3 py-2 text-sm">
-                      <p className="text-[10px] uppercase text-on-surface/40 font-semibold">Attendance</p>
-                      <p className="font-semibold">{attendancePct}%</p>
-                    </div>
-                  )}
-                  {inclRank && (
-                    <div className="rounded-lg bg-white/60 border border-white/80 px-3 py-2 text-sm">
-                      <p className="text-[10px] uppercase text-on-surface/40 font-semibold">Class Rank</p>
-                      <p className="font-semibold">#{classRank} of {classStudents.length || 1}</p>
-                    </div>
-                  )}
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                  <p className="text-[11px] font-semibold uppercase text-slate-500">Total Marks</p>
+                  <p className="text-lg font-bold text-slate-900">{sumTotal} / {sumMax}</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                  <p className="text-[11px] font-semibold uppercase text-slate-500">Percentage</p>
+                  <p className="text-lg font-bold text-slate-900">{overall}%</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                  <p className="text-[11px] font-semibold uppercase text-slate-500">Overall GPA</p>
+                  <p className="text-lg font-bold text-slate-900">{overallGpa.toFixed(2)}</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                  <p className="text-[11px] font-semibold uppercase text-slate-500">Final Grade</p>
+                  <p className="text-lg font-bold text-slate-900">{grade(overall)}</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                  <p className="text-[11px] font-semibold uppercase text-slate-500">Result</p>
+                  <span className={`inline-block text-sm font-bold px-3 py-0.5 rounded-full mt-1 ${passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{passed ? "PASS" : "FAIL"}</span>
+                </div>
+              </div>
+
+              {inclAttendance && (
+                <div className="flex justify-center mb-4 text-sm text-slate-600">
+                  Attendance: <span className="font-semibold ml-1">{attendancePct}%</span>
                 </div>
               )}
-
-              {inclRemarks && (
-                <div className="mt-5 rounded-lg bg-white/60 border border-white/80 px-3 py-2">
-                  <p className="text-[10px] uppercase text-on-surface/40 font-semibold mb-1">Class Teacher&apos;s Remarks</p>
-                  <p className="text-sm text-on-surface/80 italic">
-                    &ldquo;{student.name} has shown steady progress this {term.toLowerCase()}.{" "}
-                    {overall >= 80 ? "Consistent effort and keen participation in class discussions." : overall >= 60 ? "Solid performance with room to push further in the coming term." : "Needs to focus on consistent revision to close the gap."}{" "}
-                    Keep up the good attitude.&rdquo;
-                  </p>
-                </div>
+              {inclRank && (
+                <p className="text-center text-sm text-slate-600 mb-4">Class Rank: <span className="font-semibold">#{classRank} of {classStudents.length || 1}</span></p>
               )}
 
               {/* Signatures */}
-              <div className="flex justify-between mt-6 pt-4 border-t border-on-surface/10">
-                <div className="text-center">
-                  <p className="text-sm font-medium border-t border-on-surface/30 pt-1 px-4">Class Teacher</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium border-t border-on-surface/30 pt-1 px-4">Principal</p>
-                </div>
+              <div className="flex justify-between mt-8 pt-5">
+                {["Class Teacher", "Coordinator", "Principal"].map((s) => (
+                  <div key={s} className="text-center w-1/4">
+                    <div className="border-t border-slate-300 mb-2"></div>
+                    <p className="text-sm font-semibold text-slate-500">{s}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -343,8 +382,4 @@ export default function ReportCardsPage() {
       <style>{`@media print { body * { visibility: hidden; } .print\\:space-y-0 > *, header, aside { display: none !important; } main, main * { visibility: visible; } main { position: absolute; inset: 0; overflow: visible; } main > div { visibility: visible; } main > div > div:last-child > div:last-child { visibility: visible; } }`}</style>
     </div>
   );
-}
-
-function gradeColor(g: string) {
-  return { "A+": "#16A34A", A: "#22C55E", "B+": "#0EA5E9", B: "#3B82F6", C: "#F59E0B", D: "#F97316", F: "#EF4444" }[g] ?? "#8B8B9A";
 }
