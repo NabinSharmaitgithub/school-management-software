@@ -7,12 +7,11 @@ import {
   listSubjects,
   listMarks,
   listAttendance,
+  listExams,
   getSchoolSettings,
 } from "@/lib/data";
-import type { Class, Subject, Mark, AttendanceEntry, SchoolSettings } from "@/lib/data";
+import type { Class, Subject, Mark, AttendanceEntry, SchoolSettings, Exam } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Select } from "@/components/ui";
-
-type Style = "Modern" | "Classic" | "Compact";
 
 const GRADE_BANDS: [number, string, number][] = [
   [90, "A+", 4.0],
@@ -38,12 +37,12 @@ export default function ReportCardsPage() {
   const [marks, setMarks] = useState<Mark[]>([]);
   const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
+  const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [classId, setClassId] = useState("");
   const [term, setTerm] = useState("");
-  const [style, setStyle] = useState<Style>("Modern");
   const [inclAttendance, setInclAttendance] = useState(true);
   const [inclRemarks, setInclRemarks] = useState(true);
   const [inclRank, setInclRank] = useState(true);
@@ -51,12 +50,13 @@ export default function ReportCardsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [c, st, su, m, a, set] = await Promise.all([
+        const [c, st, su, m, a, e, set] = await Promise.all([
           listClasses(),
           listStudents(),
           listSubjects(),
           listMarks(),
           listAttendance(),
+          listExams(),
           getSchoolSettings(),
         ]);
         setClasses(c);
@@ -66,6 +66,7 @@ export default function ReportCardsPage() {
         setSubjects(su);
         setMarks(m);
         setAttendance(a);
+        setExams(e);
         setSettings(set);
         setClassId(c[0]?.id ?? "");
       } catch (e) {
@@ -82,11 +83,10 @@ export default function ReportCardsPage() {
     [students, classId]
   );
 
-  const terms = useMemo(() => {
-    const ids = new Set(classStudents.map((s) => s.id));
-    const ts = Array.from(new Set(marks.filter((m) => ids.has(m.student_id)).map((m) => m.exam_term)));
-    return ts.length ? ts : ["Mid Term", "Final Term"];
-  }, [marks, classStudents]);
+  const terms = useMemo(
+    () => exams.map((e) => e.name),
+    [exams]
+  );
 
   useEffect(() => {
     if (term === "" && terms.length) setTerm(terms[0]);
@@ -186,26 +186,6 @@ export default function ReportCardsPage() {
                   ))}
                 </Select>
               </Field>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-lg text-primary/60">palette</span>
-              Template Style
-            </h2>
-            <div className="grid grid-cols-3 gap-2">
-              {(["Modern", "Classic", "Compact"] as Style[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStyle(s)}
-                  className={`rounded-lg border px-3 py-2 text-xs transition ${
-                    style === s ? "border-primary bg-primary/15 text-primary font-semibold" : "border-white/70 hover:bg-white/50 text-on-surface/70"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
             </div>
           </div>
 
