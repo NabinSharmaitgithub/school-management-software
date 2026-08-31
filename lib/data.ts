@@ -48,6 +48,7 @@ export type Subject = {
 export type Mark = {
   id: string;
   student_id: string;
+  class_id?: string;
   subject_id: string;
   exam_term: string;
   marks_obtained: number;

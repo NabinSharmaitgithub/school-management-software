@@ -10,16 +10,19 @@ import {
   studentNames,
   subjectNames,
   listExams,
+  listClasses,
 } from "@/lib/data";
 import { Field, GlassButton, GlassCard, GradePill, Input, Modal, Select, StatusPill } from "@/components/ui";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
-type Mark = { id: string; student_id: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number; has_practical?: boolean; max_practical_marks?: number; practical_marks?: number };
+type Mark = { id: string; student_id: string; class_id?: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number; has_practical?: boolean; max_practical_marks?: number; practical_marks?: number };
 
 export default function MarksPage() {
   const scope = useTeacherScope();
   const [marks, setMarks] = useState<Mark[]>([]);
   const [students, setStudents] = useState<Record<string, string>>({});
+  const [studentClass, setStudentClass] = useState<Record<string, string>>({});
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [subjects, setSubjects] = useState<Record<string, string>>({});
   const [exams, setExams] = useState<{ id: string; name: string; academic_year: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +31,7 @@ export default function MarksPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
+    class_id: "",
     student_id: "",
     subject_id: "",
     exam_term: "",
@@ -40,19 +44,20 @@ export default function MarksPage() {
 
   async function load() {
     try {
-      const [m, s, subj, e] = await Promise.all([listMarks(), studentNames(), subjectNames(), listExams()]);
+      const [m, s, subj, e, cls] = await Promise.all([listMarks(), studentNames(), subjectNames(), listExams(), listClasses()]);
+      const studs = await listStudents();
+      const classOf: Record<string, string> = {};
+      for (const st of studs) classOf[st.id] = st.class_id;
       let visible = m;
       if (!scope.isAdmin) {
-        const studs = await listStudents();
-        const classOf: Record<string, string> = {};
-        for (const st of studs) classOf[st.id] = st.class_id;
         visible = m.filter((mk) => {
           const cid = classOf[mk.student_id];
           return !!cid && scope.subjectByClass[cid]?.includes(mk.subject_id);
         });
       }
       setMarks(visible);
-      setStudents(s);
+      setStudentClass(classOf);
+      setClasses(cls);
       setSubjects(subj);
       setExams(e);
       setForm((f) => ({ ...f, exam_term: e.some((x) => x.name === f.exam_term) ? f.exam_term : (e[0]?.name ?? "") }));
@@ -72,8 +77,8 @@ export default function MarksPage() {
     const max = Number(form.max_marks);
     const practical = Number(form.practical_marks);
     const maxPractical = Number(form.max_practical_marks);
-    if (!form.student_id || !form.subject_id || !form.exam_term || !isFinite(obtained) || !isFinite(max) || max <= 0) {
-      setError("Student, subject, exam, marks and max marks are required (max > 0).");
+    if (!form.class_id || !form.student_id || !form.subject_id || !form.exam_term || !isFinite(obtained) || !isFinite(max) || max <= 0) {
+      setError("Class, student, subject, exam, marks and max marks are required (max > 0).");
       return;
     }
     if (form.has_practical && (!isFinite(practical) || !isFinite(maxPractical) || maxPractical <= 0)) {
@@ -84,6 +89,7 @@ export default function MarksPage() {
     try {
       await addMark({
         student_id: form.student_id,
+        class_id: form.class_id,
         subject_id: form.subject_id,
         exam_term: form.exam_term,
         marks_obtained: obtained,
@@ -109,7 +115,11 @@ export default function MarksPage() {
     load();
   }
 
+  const classOptions = classes
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => ({ id: c.id, name: c.name }));
   const studentOptions = Object.entries(students)
+    .filter(([id]) => !form.class_id || studentClass[id] === form.class_id)
     .sort((a, b) => a[1].localeCompare(b[1]))
     .map(([id, name]) => ({ id, name }));
   const subjectOptions = Object.entries(subjects)
@@ -204,6 +214,20 @@ export default function MarksPage() {
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add marks">
         <form className="space-y-4" onSubmit={onAdd}>
+          <Field label="Class *">
+            <Select
+              value={form.class_id}
+              onChange={(e) => setForm((f) => ({ ...f, class_id: e.target.value, student_id: "", subject_id: "" }))}
+              required
+            >
+              <option value="">Select class…</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Student *">
             <Select
               value={form.student_id}
