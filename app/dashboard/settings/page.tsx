@@ -9,6 +9,7 @@ import {
   updateFeeStructure,
   deleteFeeStructure,
   listClasses,
+  uploadSchoolLogo,
 } from "@/lib/data";
 import type { SchoolSettings, FeeStructure, FeeItem } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
@@ -66,6 +67,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({ school_name: "", school_address: "", timezone: TIMEZONES[0], currency: CURRENCIES[0], fee_clearance_date: "" });
   const [primary, setPrimary] = useState("#6366F1");
   const [logoName, setLogoName] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [faviconName, setFaviconName] = useState("");
 
   const [year, setYear] = useState(YEARS[0]);
@@ -81,6 +83,7 @@ export default function SettingsPage() {
       setSettings(s);
       setForm({ school_name: s.school_name, school_address: s.school_address, timezone: s.timezone, currency: s.currency, fee_clearance_date: s.fee_clearance_date ?? "" });
       setPrimary(s.primary_color);
+      setLogoName(s.logo_url ? "Logo uploaded" : "");
       setStructures(fs);
       setClasses(c.map((x) => ({ id: x.id, label: `${x.name} ${x.section}`.trim() })));
       setError("");
@@ -101,6 +104,24 @@ export default function SettingsPage() {
     () => structures.filter((s) => yearFilter === "All Years" || s.academic_year === yearFilter),
     [structures, yearFilter]
   );
+
+  async function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadSchoolLogo(file);
+      setLogoName(file.name);
+      setSettings((s) => (s ? { ...s, logo_url: url } : s));
+      setSavedAt("Primary logo uploaded.");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
 
   async function onSaveGeneral(e: React.FormEvent) {
     e.preventDefault();
@@ -340,17 +361,26 @@ export default function SettingsPage() {
                         Primary Logo (Desktop) · Recommended: 400×120px
                       </p>
                       <div className="flex items-center gap-3">
-                        <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
-                          <span className="material-symbols-outlined text-lg">upload</span>
-                          {logoName || "Upload New"}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => setLogoName(e.target.files?.[0]?.name ?? "Upload New")}
-                          />
-                        </label>
-                        {logoName && (
+                        {settings?.logo_url ? (
+                          <img src={settings.logo_url} alt="School logo" className="h-12 rounded-lg border border-white/70 bg-white/60 object-contain p-1" />
+                        ) : (
+                          <div className="flex-1 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 text-center text-xs text-on-surface/40">No logo yet</div>
+                        )}
+                        {uploading ? (
+                          <GlassButton disabled>Uploading…</GlassButton>
+                        ) : (
+                          <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
+                            <span className="material-symbols-outlined text-lg">upload</span>
+                            {logoName || "Upload New"}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={onLogoFile}
+                            />
+                          </label>
+                        )}
+                        {logoName && !uploading && (
                           <GlassButton variant="ghost" onClick={() => setLogoName("")}>delete</GlassButton>
                         )}
                       </div>

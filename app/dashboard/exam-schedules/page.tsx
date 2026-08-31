@@ -223,17 +223,39 @@ export default function ExamSchedulesPage() {
     const primary = settings.primary_color || "#6366F1";
     let y = 18;
 
-    // Header: logo (school initial in a circle) + name, horizontally
-    doc.setFillColor(primary);
-    doc.circle(M + 7, y - 2, 7, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text((settings.school_name[0] ?? "S").toUpperCase(), M + 7, y, { align: "center" });
+    // Header: logo (image if set, else school initial in a colored circle) + name, horizontally
+    const nameX = M + (settings.logo_url ? 34 : 18);
+    if (settings.logo_url) {
+      const logoY = y - 14;
+      const logoH = 12;
+      try {
+        const res = await fetch(settings.logo_url);
+        const blob = await res.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = () => reject(new Error("read"));
+          r.readAsDataURL(blob);
+        });
+        const props = await doc.getImageProperties(dataUrl);
+        const logoW = (props.width / props.height) * logoH;
+        doc.addImage(dataUrl, blob.type === "image/png" ? "PNG" : "JPEG", M, logoY, logoW, logoH);
+        y = Math.max(y, logoY + 12);
+      } catch {
+        settings.logo_url = "";
+      }
+    }
+    if (!settings.logo_url) {
+      doc.setFillColor(primary);
+      doc.circle(M + 7, y - 2, 7, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text((settings.school_name[0] ?? "S").toUpperCase(), M + 7, y, { align: "center" });
+    }
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(18);
-    doc.text(settings.school_name, M + 18, y);
-    y += 9;
+    doc.text(settings.school_name, nameX, y);
 
     // Divider only below the body area, clear of the logo/name row
     doc.setDrawColor(primary);

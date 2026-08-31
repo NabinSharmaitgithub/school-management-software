@@ -12,7 +12,8 @@ import {
   serverTimestamp,
   deleteField,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 export type Student = {
   id: string;
@@ -266,6 +267,7 @@ export type SchoolSettings = {
   currency: string;
   primary_color: string;
   fee_clearance_date: string; // "YYYY-MM-DD" cutoff for admit-card issuance; empty = unset
+  logo_url: string; // Firebase Storage download URL for the school logo; empty = unset
 };
 
 export type FeeItem = {
@@ -801,6 +803,7 @@ const SETTINGS_DEFAULTS: Omit<SchoolSettings, "id"> = {
   currency: "INR (₹)",
   primary_color: "#6366F1",
   fee_clearance_date: "",
+  logo_url: "",
 };
 
 /** School-wide profile + branding settings. */
@@ -812,6 +815,15 @@ export async function getSchoolSettings(): Promise<SchoolSettings> {
 
 export async function updateSchoolSettings(data: Partial<SchoolSettings>) {
   await setDoc(doc(db!, "settings", "school"), data, { merge: true });
+}
+
+/** Upload the school logo to Storage and persist its download URL in settings. */
+export async function uploadSchoolLogo(file: File): Promise<string> {
+  const p = ref(storage!, `settings/school-logo${Date.now()}`); // ponytail: newest-URL trick; point all readers at settings.logo_url so old blobs can be GC'd later
+  await uploadBytes(p, file);
+  const url = await getDownloadURL(p);
+  await updateSchoolSettings({ logo_url: url });
+  return url;
 }
 
 /** Fee structures (templates applied per class / academic year). */
