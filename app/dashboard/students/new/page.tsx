@@ -19,6 +19,9 @@ export default function NewStudentPage() {
     email: "",
     phone: "",
     guardian: "",
+    father_name: "",
+    mother_name: "",
+    dob: "",
     address: "",
   });
 
@@ -47,6 +50,9 @@ export default function NewStudentPage() {
         email: form.email.trim(),
         phone: form.phone.trim(),
         guardian: form.guardian.trim(),
+        father_name: form.father_name.trim(),
+        mother_name: form.mother_name.trim(),
+        dob: form.dob,
         address: form.address.trim(),
       });
       router.push(`/dashboard/students/${id}`);
@@ -116,6 +122,27 @@ export default function NewStudentPage() {
                 placeholder="Parent or guardian name"
                 value={form.guardian}
                 onChange={(e) => set("guardian", e.target.value)}
+              />
+            </Field>
+            <Field label="Date of Birth">
+              <Input
+                type="date"
+                value={form.dob}
+                onChange={(e) => set("dob", e.target.value)}
+              />
+            </Field>
+            <Field label="Father's Name">
+              <Input
+                placeholder="Father's full name"
+                value={form.father_name}
+                onChange={(e) => set("father_name", e.target.value)}
+              />
+            </Field>
+            <Field label="Mother's Name">
+              <Input
+                placeholder="Mother's full name"
+                value={form.mother_name}
+                onChange={(e) => set("mother_name", e.target.value)}
               />
             </Field>
             <Field label="Phone">

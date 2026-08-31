@@ -33,7 +33,7 @@ function gpa(pct: number) {
 
 export default function ReportCardsPage() {
   const [classes, setClasses] = useState<Class[]>([]);
-  const [students, setStudents] = useState<{ id: string; name: string; roll_number: string; class_id: string; guardian?: string; phone?: string; gender?: string; address?: string }[]>([]);
+  const [students, setStudents] = useState<{ id: string; name: string; roll_number: string; class_id: string; guardian?: string; phone?: string; gender?: string; father_name?: string; mother_name?: string; dob?: string; address?: string }[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
@@ -61,7 +61,7 @@ export default function ReportCardsPage() {
         ]);
         setClasses(c);
         setStudents(
-          st.map((s) => ({ id: s.id, name: s.name, roll_number: s.roll_number, class_id: s.class_id, guardian: s.guardian, phone: s.phone, gender: s.gender, address: s.address }))
+          st.map((s) => ({ id: s.id, name: s.name, roll_number: s.roll_number, class_id: s.class_id, guardian: s.guardian, phone: s.phone, gender: s.gender, father_name: s.father_name, mother_name: s.mother_name, dob: s.dob, address: s.address }))
         );
         setSubjects(su);
         setMarks(m);
@@ -283,16 +283,20 @@ export default function ReportCardsPage() {
                     <span className="text-sm font-semibold text-slate-800">{className}{section ? `-${section}` : ""} (Roll: {student.roll_number})</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Father's Name</span>
-                    <span className="text-sm font-semibold text-slate-800">{student.guardian ?? "—"}</span>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Date of Birth</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.dob ?? "—"}</span>
                   </div>
                   <div>
                     <span className="block text-[11px] font-semibold uppercase text-slate-500">Contact Number</span>
                     <span className="text-sm font-semibold text-slate-800">{student.phone ?? "—"}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Gender</span>
-                    <span className="text-sm font-semibold text-slate-800">{student.gender ?? "—"}</span>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Father's Name</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.father_name ?? student.guardian ?? "—"}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase text-slate-500">Mother's Name</span>
+                    <span className="text-sm font-semibold text-slate-800">{student.mother_name ?? "—"}</span>
                   </div>
                   <div className="sm:col-span-3">
                     <span className="block text-[11px] font-semibold uppercase text-slate-500">Permanent Address</span>

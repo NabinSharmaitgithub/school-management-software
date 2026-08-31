@@ -25,6 +25,9 @@ export type Student = {
   email?: string;
   phone?: string;
   guardian?: string;
+  father_name?: string;
+  mother_name?: string;
+  dob?: string;
   address?: string;
   createdAt?: unknown;
 };

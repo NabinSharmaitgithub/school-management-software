@@ -24,6 +24,9 @@ export default function StudentProfilePage() {
     email: "",
     phone: "",
     guardian: "",
+    father_name: "",
+    mother_name: "",
+    dob: "",
     address: "",
   });
 
@@ -40,6 +43,9 @@ export default function StudentProfilePage() {
           email: s.email ?? "",
           phone: s.phone ?? "",
           guardian: s.guardian ?? "",
+          father_name: s.father_name ?? "",
+          mother_name: s.mother_name ?? "",
+          dob: s.dob ?? "",
           address: s.address ?? "",
         });
         setClassName(names[s.class_id] ?? s.class_id);
@@ -150,6 +156,15 @@ export default function StudentProfilePage() {
               <Field label="Guardian / Parent">
                 <Input value={form.guardian} onChange={(e) => set("guardian", e.target.value)} />
               </Field>
+              <Field label="Date of Birth">
+                <Input type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
+              </Field>
+              <Field label="Father's Name">
+                <Input value={form.father_name} onChange={(e) => set("father_name", e.target.value)} />
+              </Field>
+              <Field label="Mother's Name">
+                <Input value={form.mother_name} onChange={(e) => set("mother_name", e.target.value)} />
+              </Field>
               <Field label="Phone">
                 <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
               </Field>
@@ -189,6 +204,7 @@ export default function StudentProfilePage() {
             </h2>
             <InfoRow label="Full name" value={student.name} />
             <InfoRow label="Gender" value={student.gender || "—"} />
+            <InfoRow label="Date of Birth" value={student.dob || "—"} />
             <InfoRow label="Address" value={student.address || "—"} />
           </GlassCard>
           <GlassCard className="p-6">
@@ -196,6 +212,8 @@ export default function StudentProfilePage() {
               Contact
             </h2>
             <InfoRow label="Guardian" value={student.guardian || "—"} />
+            <InfoRow label="Father's Name" value={student.father_name || "—"} />
+            <InfoRow label="Mother's Name" value={student.mother_name || "—"} />
             <InfoRow label="Phone" value={student.phone || "—"} />
             <InfoRow label="Email" value={student.email || "—"} />
           </GlassCard>
