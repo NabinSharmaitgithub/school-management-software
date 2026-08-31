@@ -49,6 +49,9 @@ export type Mark = {
   exam_term: string;
   marks_obtained: number;
   max_marks: number;
+  has_practical?: boolean;
+  max_practical_marks?: number;
+  practical_marks?: number;
 };
 
 export type BulkMarkStatus = "marked" | "absent" | "exempt";
@@ -509,7 +512,10 @@ export async function listMarks(): Promise<Mark[]> {
 
 export async function addMark(data: Omit<Mark, "id">) {
   const ref = doc(col.marks());
-  await setDoc(ref, data);
+  const clean = Object.fromEntries(
+    Object.entries(data).filter(([, v]) => v !== undefined && v !== null)
+  );
+  await setDoc(ref, clean);
   return ref.id;
 }
 

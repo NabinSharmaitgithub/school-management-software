@@ -5,13 +5,13 @@ import {
   bulkSetMarks,
   listClasses,
   listSubjects,
+  listExams,
   studentsInClass,
 } from "@/lib/data";
 import type { BulkMarkStatus, Class, Subject, Student } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Select, StatusPill } from "@/components/ui";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
-const TERMS = ["Mid-term", "Final", "Unit Test", "Practical", "Internal Assessment"];
 const YEARS = (() => {
   const y = new Date().getFullYear();
   return [`${y - 1}-${String(y).slice(2)}`, `${y}-${String(y + 1).slice(2)}`, `${y + 1}-${String(y + 2).slice(2)}`];
@@ -55,7 +55,8 @@ export default function BulkMarksPage() {
   const [grade, setGrade] = useState("");
   const [section, setSection] = useState("");
   const [subjectId, setSubjectId] = useState("");
-  const [examTerm, setExamTerm] = useState(TERMS[0]);
+  const [examTerm, setExamTerm] = useState("");
+  const [exams, setExams] = useState<{ id: string; name: string; academic_year: string }[]>([]);
   const [maxMarks, setMaxMarks] = useState("100");
   const [hasPractical, setHasPractical] = useState(false);
   const [maxPracticalMarks, setMaxPracticalMarks] = useState("25");
@@ -69,13 +70,15 @@ export default function BulkMarksPage() {
 
   useEffect(() => {
     if (!scope.ready) return;
-    Promise.all([listClasses(), listSubjects()])
-      .then(([c, s]) => {
+    Promise.all([listClasses(), listSubjects(), listExams()])
+      .then(([c, s, e]) => {
         const allowedClasses = scope.isAdmin
           ? c
           : c.filter((x) => Object.keys(scope.subjectByClass).includes(x.id));
         setClasses(allowedClasses);
         setSubjects(s);
+        setExams(e);
+        setExamTerm(e.some((x) => x.name === examTerm) ? examTerm : (e[0]?.name ?? ""));
         setGrade(allowedClasses[0]?.name ?? "");
         setSection(
           allowedClasses[0]
@@ -228,8 +231,8 @@ export default function BulkMarksPage() {
   async function onSave() {
     setError("");
     setSavedMsg("");
-    if (!classId || !subjectId || !max || max <= 0 || (hasPractical && maxPrac <= 0)) {
-      setError("Select a class, section, subject and a positive max marks first.");
+    if (!classId || !subjectId || !examTerm || !max || max <= 0 || (hasPractical && maxPrac <= 0)) {
+      setError("Select a class, section, subject, exam and a positive max marks first.");
       return;
     }
     if (!scope.isAdmin && !scope.subjectByClass[classId]?.includes(subjectId)) {
@@ -367,9 +370,16 @@ export default function BulkMarksPage() {
             </Select>
           </Field>
           <Field label="Exam / assessment">
-            <Select value={examTerm} onChange={(e) => setExamTerm(e.target.value)}>
-              {TERMS.map((t) => (
-                <option key={t}>{t}</option>
+            <Select
+              value={examTerm}
+              onChange={(e) => setExamTerm(e.target.value)}
+              required
+            >
+              <option value="">Select exam…</option>
+              {exams.map((x) => (
+                <option key={x.id} value={x.name}>
+                  {x.name}
+                </option>
               ))}
             </Select>
           </Field>

@@ -9,19 +9,19 @@ import {
   listStudents,
   studentNames,
   subjectNames,
+  listExams,
 } from "@/lib/data";
 import { Field, GlassButton, GlassCard, GradePill, Input, Modal, Select, StatusPill } from "@/components/ui";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
-type Mark = { id: string; student_id: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number };
-
-const TERMS = ["Mid-term", "Final", "Unit Test", "Practical"];
+type Mark = { id: string; student_id: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number; has_practical?: boolean; max_practical_marks?: number; practical_marks?: number };
 
 export default function MarksPage() {
   const scope = useTeacherScope();
   const [marks, setMarks] = useState<Mark[]>([]);
   const [students, setStudents] = useState<Record<string, string>>({});
   const [subjects, setSubjects] = useState<Record<string, string>>({});
+  const [exams, setExams] = useState<{ id: string; name: string; academic_year: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -30,14 +30,17 @@ export default function MarksPage() {
   const [form, setForm] = useState({
     student_id: "",
     subject_id: "",
-    exam_term: TERMS[0],
+    exam_term: "",
+    has_practical: false,
     marks_obtained: "",
     max_marks: "100",
+    practical_marks: "",
+    max_practical_marks: "25",
   });
 
   async function load() {
     try {
-      const [m, s, subj] = await Promise.all([listMarks(), studentNames(), subjectNames()]);
+      const [m, s, subj, e] = await Promise.all([listMarks(), studentNames(), subjectNames(), listExams()]);
       let visible = m;
       if (!scope.isAdmin) {
         const studs = await listStudents();
@@ -51,6 +54,8 @@ export default function MarksPage() {
       setMarks(visible);
       setStudents(s);
       setSubjects(subj);
+      setExams(e);
+      setForm((f) => ({ ...f, exam_term: e.some((x) => x.name === f.exam_term) ? f.exam_term : (e[0]?.name ?? "") }));
     } finally {
       setLoading(false);
     }
@@ -65,8 +70,14 @@ export default function MarksPage() {
     setError("");
     const obtained = Number(form.marks_obtained);
     const max = Number(form.max_marks);
-    if (!form.student_id || !form.subject_id || !isFinite(obtained) || !isFinite(max) || max <= 0) {
-      setError("Student, subject, marks and max marks are required (max > 0).");
+    const practical = Number(form.practical_marks);
+    const maxPractical = Number(form.max_practical_marks);
+    if (!form.student_id || !form.subject_id || !form.exam_term || !isFinite(obtained) || !isFinite(max) || max <= 0) {
+      setError("Student, subject, exam, marks and max marks are required (max > 0).");
+      return;
+    }
+    if (form.has_practical && (!isFinite(practical) || !isFinite(maxPractical) || maxPractical <= 0)) {
+      setError("Practical marks and max practical marks are required (max > 0).");
       return;
     }
     setSaving(true);
@@ -77,9 +88,12 @@ export default function MarksPage() {
         exam_term: form.exam_term,
         marks_obtained: obtained,
         max_marks: max,
+        has_practical: form.has_practical,
+        max_practical_marks: form.has_practical ? maxPractical : undefined,
+        practical_marks: form.has_practical ? practical : undefined,
       });
       setAddOpen(false);
-      setForm((f) => ({ ...f, student_id: "", subject_id: "", marks_obtained: "" }));
+      setForm((f) => ({ ...f, student_id: "", subject_id: "", has_practical: false, marks_obtained: "", practical_marks: "" }));
       load();
     } catch (err) {
       setError((err as Error).message);
@@ -148,7 +162,10 @@ export default function MarksPage() {
             </thead>
             <tbody>
               {marks.map((m) => {
-                const pct = m.max_marks > 0 ? Math.round((m.marks_obtained / m.max_marks) * 100) : 0;
+                const totalMax = m.max_marks + (m.has_practical ? m.max_practical_marks ?? 0 : 0);
+                const totalGot =
+                  m.marks_obtained + (m.has_practical ? m.practical_marks ?? 0 : 0);
+                const pct = totalMax > 0 ? Math.round((totalGot / totalMax) * 100) : 0;
                 return (
                   <tr key={m.id} className="border-t border-on-surface/10 hover:bg-white/40">
                     <td className="py-3 pr-4 font-medium text-on-surface">
@@ -161,7 +178,9 @@ export default function MarksPage() {
                       {m.exam_term}
                     </td>
                     <td className="py-3 pr-4 text-right text-on-surface/70">
-                      {m.marks_obtained} / {m.max_marks}
+                      {m.has_practical
+                        ? `${m.marks_obtained}+${m.practical_marks ?? 0} / ${m.max_marks}+${m.max_practical_marks ?? 0}`
+                        : `${m.marks_obtained} / ${m.max_marks}`}
                     </td>
                     <td className="py-3 pr-4 text-center font-semibold text-on-surface">{pct}%</td>
                     <td className="py-3 text-center">
@@ -213,13 +232,17 @@ export default function MarksPage() {
               ))}
             </Select>
           </Field>
-          <Field label="Exam term">
+          <Field label="Exam">
             <Select
               value={form.exam_term}
               onChange={(e) => setForm((f) => ({ ...f, exam_term: e.target.value }))}
+              required
             >
-              {TERMS.map((t) => (
-                <option key={t}>{t}</option>
+              <option value="">Select exam…</option>
+              {exams.map((x) => (
+                <option key={x.id} value={x.name}>
+                  {x.name}
+                </option>
               ))}
             </Select>
           </Field>
@@ -247,6 +270,41 @@ export default function MarksPage() {
               />
             </Field>
           </div>
+          <Field label="Class practical mark?">
+            <Select
+              value={form.has_practical ? "yes" : "no"}
+              onChange={(e) => setForm((f) => ({ ...f, has_practical: e.target.value === "yes" }))}
+            >
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Select>
+          </Field>
+          {form.has_practical && (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Practical marks *">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="0"
+                  value={form.practical_marks}
+                  onChange={(e) => setForm((f) => ({ ...f, practical_marks: e.target.value }))}
+                  required
+                />
+              </Field>
+              <Field label="Max practical marks *">
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="25"
+                  value={form.max_practical_marks}
+                  onChange={(e) => setForm((f) => ({ ...f, max_practical_marks: e.target.value }))}
+                  required
+                />
+              </Field>
+            </div>
+          )}
 
           {error && (
             <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">
