@@ -129,7 +129,7 @@ export default function LoginPage() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             <Field label="Email or Username">
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface/40 material-symbols-outlined text-xl">person</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40 material-symbols-outlined text-xl">person</span>
                 <Input
                   id="email"
                   type="text"
@@ -146,7 +146,7 @@ export default function LoginPage() {
 
             <Field label="Password">
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface/40 material-symbols-outlined text-xl">lock</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40 material-symbols-outlined text-xl">lock</span>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -161,7 +161,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface/40 hover:text-primary transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface/40 hover:text-primary transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   aria-pressed={showPassword}
                 >
