@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { addLeave, deleteStaff, getStaff, listLeaves, updateStaff } from "@/lib/data";
+import { addLeave, deleteStaff, getStaff, listLeaves, updateStaff, uploadStaffPhoto } from "@/lib/data";
 import type { LeaveRequest, Staff } from "@/lib/data";
 import { useAuthEmail } from "@/components/dashboard/teacher-scope";
-import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
+import { Field, GlassButton, GlassCard, Input, Modal, PhotoUpload, Select, StatusPill } from "@/components/ui";
 
 export default function StaffProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +28,7 @@ export default function StaffProfilePage() {
     phone: "",
     joined: "",
     status: "active" as Staff["status"],
+    photo_url: "",
   });
   const [leave, setLeave] = useState({ start_date: "", end_date: "", reason: "" });
 
@@ -43,6 +44,7 @@ export default function StaffProfilePage() {
         phone: s.phone ?? "",
         joined: s.joined ?? "",
         status: s.status ?? "active",
+        photo_url: s.photo_url ?? "",
       });
     }
     setLeaves(l.filter((x) => x.staff_id === id).sort((a, b) => b.start_date.localeCompare(a.start_date)));
@@ -124,14 +126,25 @@ export default function StaffProfilePage() {
             Staff
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold">{staff.name}</h1>
-            <StatusPill tone={staff.status === "active" ? "success" : staff.status === "on_leave" ? "warning" : "neutral"}>
-              {staff.status.replace("_", " ")}
-            </StatusPill>
+            {staff.photo_url ? (
+              <img src={staff.photo_url} alt={staff.name} className="h-12 w-12 rounded-full object-cover border border-white/70 bg-white/60 shrink-0" />
+            ) : (
+              <span className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+                {staff.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+              </span>
+            )}
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-semibold">{staff.name}</h1>
+                <StatusPill tone={staff.status === "active" ? "success" : staff.status === "on_leave" ? "warning" : "neutral"}>
+                  {staff.status.replace("_", " ")}
+                </StatusPill>
+              </div>
+              <p className="text-sm text-on-surface/60">
+                {staff.role} · {staff.department || "No department"}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-on-surface/60">
-            {staff.role} · {staff.department || "No department"}
-          </p>
         </div>
         <div className="flex gap-2">
           {!editing && (isOwn || !isTeacher) && (
@@ -186,6 +199,17 @@ export default function StaffProfilePage() {
                   <option value="on_leave">On leave</option>
                   <option value="inactive">Inactive</option>
                 </Select>
+              </Field>
+              <Field label="Photo" className="sm:col-span-2">
+                <PhotoUpload
+                  value={form.photo_url}
+                  onFile={async (file) => {
+                    const url = await uploadStaffPhoto(file);
+                    set("photo_url", url);
+                    return url;
+                  }}
+                  alt="Staff photo"
+                />
               </Field>
             </div>
             <div className="flex justify-end gap-3 pt-2">

@@ -183,14 +183,18 @@ export default function StaffPage() {
                           href={`/dashboard/staff/${s.id}`}
                           className="flex items-center gap-3 group"
                         >
-                          <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">
-                            {s.name
-                              .split(" ")
-                              .slice(0, 2)
-                              .map((w) => w[0])
-                              .join("")
-                              .toUpperCase()}
-                          </span>
+                          {s.photo_url ? (
+                            <img src={s.photo_url} alt={s.name} className="w-9 h-9 rounded-full object-cover border border-white/70 bg-white/60 shrink-0" />
+                          ) : (
+                            <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">
+                              {s.name
+                                .split(" ")
+                                .slice(0, 2)
+                                .map((w) => w[0])
+                                .join("")
+                                .toUpperCase()}
+                            </span>
+                          )}
                           <span className="font-medium text-on-surface group-hover:text-primary transition-colors">
                             {s.name}
                           </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
 export function GlassCard({
@@ -203,5 +203,50 @@ export function Alert({
     <p className={cn("text-xs rounded-lg px-3 py-2 border", typeStyles[type], className)} role="alert">
       {message}
     </p>
+  );
+}
+
+/** Photo picker with preview. `value` is the stored URL; `onFile(file)` uploads and returns the new URL. */
+export function PhotoUpload({
+  value,
+  onFile,
+  alt,
+}: {
+  value: string;
+  onFile: (file: File) => Promise<string>;
+  alt?: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [localUrl, setLocalUrl] = useState("");
+
+  async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setLocalUrl(URL.createObjectURL(file)); // optimistic preview before upload lands
+    try {
+      const url = await onFile(file);
+      setLocalUrl(url);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      {localUrl || value ? (
+        <img src={localUrl || value} alt={alt ?? "photo"} className="h-16 w-16 rounded-full object-cover border border-white/70 bg-white/60 shrink-0" />
+      ) : (
+        <div className="h-16 w-16 rounded-full border border-dashed border-white/70 bg-white/40 flex items-center justify-center text-on-surface/40 shrink-0">
+          <span className="material-symbols-outlined text-2xl">person</span>
+        </div>
+      )}
+      <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-2.5 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
+        <span className="material-symbols-outlined text-lg">upload</span>
+        {uploading ? "Uploading…" : localUrl || value ? "Change photo" : "Upload photo"}
+        <input type="file" accept="image/*" className="hidden" onChange={onChange} />
+      </label>
+    </div>
   );
 }

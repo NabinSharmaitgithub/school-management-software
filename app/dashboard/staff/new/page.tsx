@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { addStaff } from "@/lib/data";
+import { addStaff, uploadStaffPhoto } from "@/lib/data";
 import { useAuthEmail } from "@/components/dashboard/teacher-scope";
-import { Field, GlassButton, GlassCard, Input, Select } from "@/components/ui";
+import { Field, GlassButton, GlassCard, Input, PhotoUpload, Select } from "@/components/ui";
 
 export default function NewStaffPage() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function NewStaffPage() {
     phone: "",
     joined: "",
     status: "active" as "active" | "on_leave" | "inactive",
+    photo_url: "",
   });
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function NewStaffPage() {
         phone: form.phone.trim(),
         joined: form.joined,
         status: form.status,
+        photo_url: form.photo_url,
       });
       router.push(`/dashboard/staff/${id}`);
     } catch (e) {
@@ -124,6 +126,17 @@ export default function NewStaffPage() {
                 <option value="on_leave">On leave</option>
                 <option value="inactive">Inactive</option>
               </Select>
+            </Field>
+            <Field label="Photo" className="sm:col-span-2">
+              <PhotoUpload
+                value={form.photo_url}
+                onFile={async (file) => {
+                  const url = await uploadStaffPhoto(file);
+                  set("photo_url", url);
+                  return url;
+                }}
+                alt="Staff photo"
+              />
             </Field>
           </div>
 

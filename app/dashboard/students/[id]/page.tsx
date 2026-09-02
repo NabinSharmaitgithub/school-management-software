@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getStudent, classNames, updateStudent, deleteStudent, listClasses } from "@/lib/data";
-import { Field, GlassButton, GlassCard, Input, Modal, Select } from "@/components/ui";
+import { getStudent, classNames, updateStudent, deleteStudent, listClasses, uploadStudentPhoto } from "@/lib/data";
+import { Field, GlassButton, GlassCard, Input, Modal, PhotoUpload, Select } from "@/components/ui";
 
 export default function StudentProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +28,7 @@ export default function StudentProfilePage() {
     mother_name: "",
     dob: "",
     address: "",
+    photo_url: "",
   });
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function StudentProfilePage() {
           mother_name: s.mother_name ?? "",
           dob: s.dob ?? "",
           address: s.address ?? "",
+          photo_url: s.photo_url ?? "",
         });
         setClassName(names[s.class_id] ?? s.class_id);
       }
@@ -97,10 +99,21 @@ export default function StudentProfilePage() {
             <span className="material-symbols-outlined text-xs">arrow_back</span>
             Students
           </Link>
-          <h1 className="text-xl font-semibold">{student.name}</h1>
-          <p className="text-sm text-on-surface/60">
-            {student.roll_number} · {className}
-          </p>
+          <div className="flex items-center gap-3">
+            {student.photo_url ? (
+              <img src={student.photo_url} alt={student.name} className="h-12 w-12 rounded-full object-cover border border-white/70 bg-white/60 shrink-0" />
+            ) : (
+              <span className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+                {student.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+              </span>
+            )}
+            <div>
+              <h1 className="text-xl font-semibold">{student.name}</h1>
+              <p className="text-sm text-on-surface/60">
+                {student.roll_number} · {className}
+              </p>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           {!editing && (
@@ -177,6 +190,17 @@ export default function StudentProfilePage() {
               </Field>
               <Field label="Address" className="sm:col-span-2">
                 <Input value={form.address} onChange={(e) => set("address", e.target.value)} />
+              </Field>
+              <Field label="Photo" className="sm:col-span-2">
+                <PhotoUpload
+                  value={form.photo_url}
+                  onFile={async (file) => {
+                    const url = await uploadStudentPhoto(file);
+                    set("photo_url", url);
+                    return url;
+                  }}
+                  alt="Student photo"
+                />
               </Field>
             </div>
 

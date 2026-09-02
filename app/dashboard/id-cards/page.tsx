@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { listClasses, listStudents } from "@/lib/data";
-import type { Class, Student } from "@/lib/data";
+import { listClasses, listStudents, getSchoolSettings } from "@/lib/data";
+import type { Class, SchoolSettings, Student } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Select, StatusPill } from "@/components/ui";
 
 type Style = "Modern" | "Classic";
@@ -19,13 +19,15 @@ export default function IdCardsPage() {
   const [showEmergency, setShowEmergency] = useState(true);
   const [showValidity, setShowValidity] = useState(true);
   const [bulk, setBulk] = useState<"idle" | "running" | "done">("idle");
+  const [settings, setSettings] = useState<SchoolSettings | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [c, s] = await Promise.all([listClasses(), listStudents()]);
+        const [c, s, set] = await Promise.all([listClasses(), listStudents(), getSchoolSettings()]);
         setClasses(c);
         setStudents(s);
+        setSettings(set);
         setStudentId(s[0]?.id ?? "");
       } catch (e) {
         setError((e as Error).message);
@@ -174,11 +176,19 @@ export default function IdCardsPage() {
                 )}
 
                 <div className="flex items-center gap-3 relative z-10">
-                  <div className="h-14 w-14 rounded-full bg-white/80 border border-white/90 flex items-center justify-center text-primary shadow-sm">
-                    <span className="material-symbols-outlined text-3xl">person</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`font-bold tracking-wide ${style === "Modern" ? "text-white" : "text-indigo-700"}`}>Greenwood International</p>
+                  {student.photo_url ? (
+                    <img src={student.photo_url} alt={student.name} className="h-14 w-14 rounded-full object-cover border border-white/90 shadow-sm" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-white/80 border border-white/90 flex items-center justify-center text-primary shadow-sm">
+                      <span className="material-symbols-outlined text-3xl">person</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {settings?.logo_url ? (
+                      <img src={settings.logo_url} alt="School logo" className={`h-8 object-contain ${style === "Modern" ? "" : "invert"}`} />
+                    ) : (
+                      <p className={`font-bold tracking-wide truncate ${style === "Modern" ? "text-white" : "text-indigo-700"}`}>Greenwood International</p>
+                    )}
                     <p className={`text-[10px] ${style === "Modern" ? "text-white/80" : "text-grey-500"}`}>Student Identity Card</p>
                   </div>
                   {showQR && (

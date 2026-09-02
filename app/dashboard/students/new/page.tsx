@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { addStudent, listClasses } from "@/lib/data";
-import { Field, GlassButton, GlassCard, Input, Select } from "@/components/ui";
+import { addStudent, listClasses, uploadStudentPhoto } from "@/lib/data";
+import { Field, GlassButton, GlassCard, Input, PhotoUpload, Select } from "@/components/ui";
 
 export default function NewStudentPage() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function NewStudentPage() {
     mother_name: "",
     dob: "",
     address: "",
+    photo_url: "",
   });
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function NewStudentPage() {
         mother_name: form.mother_name.trim(),
         dob: form.dob,
         address: form.address.trim(),
+        photo_url: form.photo_url,
       });
       router.push(`/dashboard/students/${id}`);
     } catch (e) {
@@ -165,6 +167,17 @@ export default function NewStudentPage() {
                 placeholder="Home address"
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
+              />
+            </Field>
+            <Field label="Photo" className="sm:col-span-2">
+              <PhotoUpload
+                value={form.photo_url}
+                onFile={async (file) => {
+                  const url = await uploadStudentPhoto(file);
+                  set("photo_url", url);
+                  return url;
+                }}
+                alt="Student photo"
               />
             </Field>
           </div>

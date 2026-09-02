@@ -29,6 +29,7 @@ export type Student = {
   mother_name?: string;
   dob?: string;
   address?: string;
+  photo_url?: string;
   createdAt?: unknown;
 };
 
@@ -104,6 +105,7 @@ export type Staff = {
   phone?: string;
   joined?: string; // YYYY-MM-DD
   status: "active" | "on_leave" | "inactive";
+  photo_url?: string;
 };
 
 export type LeaveRequest = {
@@ -834,6 +836,20 @@ export async function uploadSchoolLogo(file: File): Promise<string> {
   const url = await getDownloadURL(p);
   await updateSchoolSettings({ logo_url: url });
   return url;
+}
+
+/** Upload a student profile photo and return its download URL (caller stores it on the doc). */
+export async function uploadStudentPhoto(file: File): Promise<string> {
+  const p = ref(storage!, `photos/students/${Date.now()}`); // ponytail: newest-URL trick; old blobs GC-able later
+  await uploadBytes(p, file);
+  return getDownloadURL(p);
+}
+
+/** Upload a staff profile photo and return its download URL (caller stores it on the doc). */
+export async function uploadStaffPhoto(file: File): Promise<string> {
+  const p = ref(storage!, `photos/staff/${Date.now()}`); // ponytail: newest-URL trick; old blobs GC-able later
+  await uploadBytes(p, file);
+  return getDownloadURL(p);
 }
 
 /** Fee structures (templates applied per class / academic year). */
