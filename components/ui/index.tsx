@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 
 export function GlassCard({
@@ -23,7 +26,7 @@ export function GlassButton({
   const variants = {
     primary: "glass-btn-primary text-white",
     ghost: "glass-btn-ghost text-on-surface/80",
-    danger: "bg-rose/90 hover:bg-rose text-white shadow",
+    danger: "glass-btn-danger text-white",
   };
   return (
     <button
@@ -47,10 +50,10 @@ export function StatusPill({
   children: React.ReactNode;
 }) {
   const tones: Record<string, string> = {
-    success: "text-success bg-success/10",
-    warning: "text-amber bg-amber/10",
-    error: "text-rose bg-rose/10",
-    primary: "text-primary bg-primary/10",
+    success: "text-emerald-600 bg-emerald-100",
+    warning: "text-amber-600 bg-amber-100",
+    error: "text-rose-600 bg-rose-100",
+    primary: "text-indigo-600 bg-indigo-100",
     neutral: "text-on-surface/70 bg-white/50",
   };
   return <span className={cn("glass-pill", tones[tone])}>{children}</span>;
@@ -71,23 +74,68 @@ export function Modal({
   wide?: boolean;
 }) {
   if (!open) return null;
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement;
+    panelRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+      if (e.key === "Tab" && panelRef.current) {
+        const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+      previousActiveElement.current?.focus();
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" ref={overlayRef}>
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
+        onKeyDown={(e) => e.stopPropagation()}
       />
       <div
+        ref={panelRef}
+        tabIndex={-1}
         className={cn(
-          "relative z-10 w-full glass-panel p-6 max-h-[90vh] overflow-y-auto",
+          "relative z-10 w-full glass-panel p-6 max-h-[90vh] overflow-y-auto outline-none",
           wide ? "max-w-2xl" : "max-w-md"
         )}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-on-surface">{title}</h2>
           <button
             onClick={onClose}
             className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
+            aria-label="Close modal"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -133,4 +181,27 @@ export function GradePill({ pct }: { pct: number }) {
   if (pct >= 60) return <StatusPill tone="warning">B</StatusPill>;
   if (pct >= 40) return <StatusPill tone="neutral">C</StatusPill>;
   return <StatusPill tone="error">F</StatusPill>;
+}
+
+/** Consistent alert/error message component. */
+export function Alert({
+  message,
+  type = "error",
+  className,
+}: {
+  message: string;
+  type?: "error" | "success" | "warning" | "info";
+  className?: string;
+}) {
+  const typeStyles = {
+    error: "text-error bg-rose/10 border border-rose/20",
+    success: "text-success bg-emerald/10 border border-emerald/20",
+    warning: "text-amber-600 bg-amber/10 border border-amber/20",
+    info: "text-primary bg-primary/10 border border-primary/20",
+  };
+  return (
+    <p className={cn("text-xs rounded-lg px-3 py-2 border", typeStyles[type], className)} role="alert">
+      {message}
+    </p>
+  );
 }

@@ -12,7 +12,7 @@ import {
   listExams,
   listClasses,
 } from "@/lib/data";
-import { Field, GlassButton, GlassCard, GradePill, Input, Modal, Select, StatusPill } from "@/components/ui";
+import { Field, GlassButton, GlassCard, GradePill, Input, Modal, Select, StatusPill, Alert } from "@/components/ui";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 type Mark = { id: string; student_id: string; class_id?: string; subject_id: string; exam_term: string; marks_obtained: number; max_marks: number; has_practical?: boolean; max_practical_marks?: number; practical_marks?: number };
@@ -158,7 +158,8 @@ export default function MarksPage() {
             No marks yet. Click “Add Marks” to record the first entry.
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                 <th className="pb-3 pr-4">Student</th>
@@ -209,6 +210,7 @@ export default function MarksPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </GlassCard>
 
@@ -330,11 +332,7 @@ export default function MarksPage() {
             </div>
           )}
 
-          {error && (
-            <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
+          {error && <Alert message={error} type="error" />}
 
           <div className="flex justify-end gap-3 pt-2">
             <GlassButton type="button" variant="ghost" onClick={() => setAddOpen(false)}>

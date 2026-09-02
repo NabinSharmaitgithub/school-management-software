@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -40,13 +40,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <span className="font-semibold text-sm">Academix</span>
         </div>
         <div className="flex items-center gap-2">
-          <NotificationBell />
           <MobileNav pathname={pathname} items={items} />
           <LogoutButton onLogout={() => router.replace("/")} />
         </div>
       </div>
 
-      {/* Desktop notification bell */}
+      {/* Notification bell - only on desktop, positioned in header area */}
       <div className="hidden md:block fixed top-6 right-6 z-40">
         <NotificationBell />
       </div>
@@ -115,38 +114,49 @@ function LogoutButton({ onLogout, wide }: { onLogout: () => void; wide?: boolean
 
 function MobileNav({ pathname, items }: { pathname: string; items: typeof NAV_ITEMS }) {
   const [open, setOpen] = useState(false);
+  const navRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (open && navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={navRef}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="glass-btn-ghost w-9 h-9 rounded-lg flex items-center justify-center text-on-surface/70"
+        aria-label="Open navigation menu"
+        aria-expanded={open}
       >
-        <span className="material-symbols-outlined">menu</span>
+        <span className="material-symbols-outlined">{open ? "close" : "menu"}</span>
       </button>
       {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <nav className="absolute right-0 top-full mt-2 w-56 glass-panel p-2 z-50 space-y-1">
-            {items.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-                    active ? "bg-primary/15 text-primary font-semibold" : "text-on-surface/80"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-lg">{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </>
+        <nav className="absolute right-0 top-full mt-2 w-56 glass-panel p-2 z-50 space-y-1">
+          {items.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                  active ? "bg-primary/15 text-primary font-semibold" : "text-on-surface/80"
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
       )}
     </div>
   );

@@ -133,33 +133,35 @@ function ClassesTable({
       ) : classes.length === 0 ? (
         <p className="text-sm text-on-surface/60 py-8 text-center">No classes yet.</p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
-              <th className="pb-3 pr-4">Class</th>
-              <th className="pb-3 pr-4">Section</th>
-              <th className="pb-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {classes.map((c) => (
-              <tr key={c.id} className="border-t border-on-surface/10 hover:bg-white/40">
-                <td className="py-3 pr-4 font-medium">{c.name}</td>
-                <td className="py-3 pr-4 text-on-surface/70">{c.section}</td>
-                <td className="py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => open(c)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </button>
-                    <button onClick={() => setConfirm(c.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose">
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[500px]">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
+                <th className="pb-3 pr-4">Class</th>
+                <th className="pb-3 pr-4">Section</th>
+                <th className="pb-3 text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {classes.map((c) => (
+                <tr key={c.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                  <td className="py-3 pr-4 font-medium">{c.name}</td>
+                  <td className="py-3 pr-4 text-on-surface/70">{c.section}</td>
+                  <td className="py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => open(c)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary">
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button onClick={() => setConfirm(c.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose">
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <Modal
@@ -297,35 +299,37 @@ function SubjectsTable({
       ) : subjects.length === 0 ? (
         <p className="text-sm text-on-surface/60 py-8 text-center">No subjects yet.</p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
-              <th className="pb-3 pr-4">Code</th>
-              <th className="pb-3 pr-4">Name</th>
-              <th className="pb-3 pr-4 hidden md:table-cell">Description</th>
-              <th className="pb-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subjects.map((s) => (
-              <tr key={s.id} className="border-t border-on-surface/10 hover:bg-white/40">
-                <td className="py-3 pr-4 font-mono text-xs text-on-surface/70">{s.code || "—"}</td>
-                <td className="py-3 pr-4 font-medium">{s.name}</td>
-                <td className="py-3 pr-4 hidden md:table-cell text-on-surface/60">{s.description || "—"}</td>
-                <td className="py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => open(s)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </button>
-                    <button onClick={() => setConfirm(s.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose">
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
+                <th className="pb-3 pr-4">Code</th>
+                <th className="pb-3 pr-4">Name</th>
+                <th className="pb-3 pr-4 hidden md:table-cell">Description</th>
+                <th className="pb-3 text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {subjects.map((s) => (
+                <tr key={s.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                  <td className="py-3 pr-4 font-mono text-xs text-on-surface/70">{s.code || "—"}</td>
+                  <td className="py-3 pr-4 font-medium">{s.name}</td>
+                  <td className="py-3 pr-4 hidden md:table-cell text-on-surface/60">{s.description || "—"}</td>
+                  <td className="py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => open(s)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary">
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button onClick={() => setConfirm(s.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose">
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <Modal

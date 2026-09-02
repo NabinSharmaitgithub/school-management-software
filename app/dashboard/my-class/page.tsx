@@ -301,7 +301,8 @@ export default function MyClassPage() {
                   No students in this class yet.
                 </p>
               ) : (
-                <table className="w-full text-sm min-w-[480px]">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                       <th className="pb-3 pr-4">Student</th>
@@ -336,7 +337,8 @@ export default function MyClassPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </div>
               )}
             </GlassCard>
           )}

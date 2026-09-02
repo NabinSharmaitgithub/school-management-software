@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { listStudents, deleteStudent, classNames } from "@/lib/data";
-import { GlassButton, GlassCard, Modal, StatusPill } from "@/components/ui";
+import { GlassButton, GlassCard, Modal, StatusPill, Alert } from "@/components/ui";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 
 export default function StudentsPage() {
@@ -78,9 +78,7 @@ export default function StudentsPage() {
         )}
       </header>
 
-      {error && (
-        <div className="glass-panel p-4 text-sm text-error bg-rose/10">{error}</div>
-      )}
+      {error && <Alert message={error} type="error" />}
 
       <GlassCard className="p-4">
         <div className="relative mb-4">
@@ -106,7 +104,8 @@ export default function StudentsPage() {
                 : "No students match your search."}
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                 <th className="pb-3 pr-4">Student</th>
@@ -166,6 +165,7 @@ export default function StudentsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </GlassCard>
 

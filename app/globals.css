@@ -75,6 +75,17 @@
     transform: translateY(-1px);
   }
 
+  .glass-btn-danger {
+    @apply text-white font-semibold rounded-lg transition-all duration-200;
+    background: linear-gradient(135deg, #f43f5e 0%, #ef4444 100%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+  }
+  .glass-btn-danger:hover {
+    box-shadow: 0 6px 16px rgba(244, 63, 94, 0.4);
+    transform: translateY(-1px);
+  }
+
   .glass-pill {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
   }

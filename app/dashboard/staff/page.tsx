@@ -12,7 +12,7 @@ import {
 } from "@/lib/data";
 import type { LeaveRequest, Staff } from "@/lib/data";
 import { useAuthEmail } from "@/components/dashboard/teacher-scope";
-import { Field, GlassButton, GlassCard, Input, Modal, StatusPill } from "@/components/ui";
+import { Field, GlassButton, GlassCard, Input, Modal, StatusPill, Alert } from "@/components/ui";
 
 export default function StaffPage() {
   const email = useAuthEmail();
@@ -138,9 +138,7 @@ export default function StaffPage() {
         ))}
       </div>
 
-      {error && (
-        <div className="glass-panel p-4 text-sm text-error bg-rose/10">{error}</div>
-      )}
+      {error && <Alert message={error} type="error" />}
 
       {tab === "directory" ? (
         <GlassCard className="p-4">
@@ -165,72 +163,74 @@ export default function StaffPage() {
                 : "No staff match your search."}
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
-                  <th className="pb-3 pr-4">Name</th>
-                  <th className="pb-3 pr-4 hidden sm:table-cell">Role</th>
-                  <th className="pb-3 pr-4 hidden md:table-cell">Department</th>
-                  <th className="pb-3 pr-4 hidden lg:table-cell">Contact</th>
-                  <th className="pb-3 pr-4 hidden sm:table-cell">Status</th>
-                  <th className="pb-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s) => (
-                  <tr key={s.id} className="border-t border-on-surface/10 hover:bg-white/40">
-                    <td className="py-3 pr-4">
-                      <Link
-                        href={`/dashboard/staff/${s.id}`}
-                        className="flex items-center gap-3 group"
-                      >
-                        <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">
-                          {s.name
-                            .split(" ")
-                            .slice(0, 2)
-                            .map((w) => w[0])
-                            .join("")
-                            .toUpperCase()}
-                        </span>
-                        <span className="font-medium text-on-surface group-hover:text-primary transition-colors">
-                          {s.name}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="py-3 pr-4 hidden sm:table-cell text-on-surface/70">{s.role}</td>
-                    <td className="py-3 pr-4 hidden md:table-cell text-on-surface/70">
-                      {s.department}
-                    </td>
-                    <td className="py-3 pr-4 hidden lg:table-cell text-on-surface/70">
-                      {s.phone || s.email || "—"}
-                    </td>
-                    <td className="py-3 pr-4 hidden sm:table-cell">
-                      <StatusPill tone={s.status === "active" ? "success" : s.status === "on_leave" ? "warning" : "neutral"}>
-                        {s.status.replace("_", " ")}
-                      </StatusPill>
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[700px]">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
+                    <th className="pb-3 pr-4">Name</th>
+                    <th className="pb-3 pr-4 hidden sm:table-cell">Role</th>
+                    <th className="pb-3 pr-4 hidden md:table-cell">Department</th>
+                    <th className="pb-3 pr-4 hidden lg:table-cell">Contact</th>
+                    <th className="pb-3 pr-4 hidden sm:table-cell">Status</th>
+                    <th className="pb-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((s) => (
+                    <tr key={s.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                      <td className="py-3 pr-4">
                         <Link
                           href={`/dashboard/staff/${s.id}`}
-                          className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary"
+                          className="flex items-center gap-3 group"
                         >
-                          <span className="material-symbols-outlined text-lg">visibility</span>
+                          <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">
+                            {s.name
+                              .split(" ")
+                              .slice(0, 2)
+                              .map((w) => w[0])
+                              .join("")
+                              .toUpperCase()}
+                          </span>
+                          <span className="font-medium text-on-surface group-hover:text-primary transition-colors">
+                            {s.name}
+                          </span>
                         </Link>
-                        {!isTeacher && (
-                          <button
-                            onClick={() => setActive(s.id)}
-                            className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
+                      </td>
+                      <td className="py-3 pr-4 hidden sm:table-cell text-on-surface/70">{s.role}</td>
+                      <td className="py-3 pr-4 hidden md:table-cell text-on-surface/70">
+                        {s.department}
+                      </td>
+                      <td className="py-3 pr-4 hidden lg:table-cell text-on-surface/70">
+                        {s.phone || s.email || "—"}
+                      </td>
+                      <td className="py-3 pr-4 hidden sm:table-cell">
+                        <StatusPill tone={s.status === "active" ? "success" : s.status === "on_leave" ? "warning" : "neutral"}>
+                          {s.status.replace("_", " ")}
+                        </StatusPill>
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Link
+                            href={`/dashboard/staff/${s.id}`}
+                            className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary"
                           >
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                            <span className="material-symbols-outlined text-lg">visibility</span>
+                          </Link>
+                          {!isTeacher && (
+                            <button
+                              onClick={() => setActive(s.id)}
+                              className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
+                            >
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </GlassCard>
       ) : (
@@ -242,63 +242,65 @@ export default function StaffPage() {
               No leave requests yet.
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
-                  <th className="pb-3 pr-4">Staff</th>
-                  <th className="pb-3 pr-4 hidden sm:table-cell">Dates</th>
-                  <th className="pb-3 pr-4 hidden md:table-cell">Reason</th>
-                  <th className="pb-3 pr-4">Status</th>
-                  <th className="pb-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaves.map((l) => (
-                  <tr key={l.id} className="border-t border-on-surface/10 hover:bg-white/40">
-                    <td className="py-3 pr-4 font-medium text-on-surface">
-                      {names[l.staff_id] ?? l.staff_id}
-                    </td>
-                    <td className="py-3 pr-4 hidden sm:table-cell text-on-surface/70">
-                      {l.start_date} → {l.end_date}
-                    </td>
-                    <td className="py-3 pr-4 hidden md:table-cell text-on-surface/70">{l.reason}</td>
-                    <td className="py-3 pr-4">
-                      <StatusPill
-                        tone={
-                          l.status === "approved"
-                            ? "success"
-                            : l.status === "rejected"
-                              ? "error"
-                              : "warning"
-                        }
-                      >
-                        {l.status}
-                      </StatusPill>
-                    </td>
-                    <td className="py-3 text-right">
-                      {!isTeacher && l.status === "pending" ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => setLeaveStatus(l.id, "approved")}
-                            className="glass-btn-ghost px-2.5 h-8 rounded-lg text-xs text-success hover:bg-success/10"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => setLeaveStatus(l.id, "rejected")}
-                            className="glass-btn-ghost px-2.5 h-8 rounded-lg text-xs text-rose hover:bg-rose/10"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-on-surface/40">—</span>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[600px]">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
+                    <th className="pb-3 pr-4">Staff</th>
+                    <th className="pb-3 pr-4 hidden sm:table-cell">Dates</th>
+                    <th className="pb-3 pr-4 hidden md:table-cell">Reason</th>
+                    <th className="pb-3 pr-4">Status</th>
+                    <th className="pb-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {leaves.map((l) => (
+                    <tr key={l.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                      <td className="py-3 pr-4 font-medium text-on-surface">
+                        {names[l.staff_id] ?? l.staff_id}
+                      </td>
+                      <td className="py-3 pr-4 hidden sm:table-cell text-on-surface/70">
+                        {l.start_date} → {l.end_date}
+                      </td>
+                      <td className="py-3 pr-4 hidden md:table-cell text-on-surface/70">{l.reason}</td>
+                      <td className="py-3 pr-4">
+                        <StatusPill
+                          tone={
+                            l.status === "approved"
+                              ? "success"
+                              : l.status === "rejected"
+                                ? "error"
+                                : "warning"
+                          }
+                        >
+                          {l.status}
+                        </StatusPill>
+                      </td>
+                      <td className="py-3 text-right">
+                        {!isTeacher && l.status === "pending" ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => setLeaveStatus(l.id, "approved")}
+                              className="glass-btn-ghost px-2.5 h-8 rounded-lg text-xs text-success hover:bg-success/10"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => setLeaveStatus(l.id, "rejected")}
+                              className="glass-btn-ghost px-2.5 h-8 rounded-lg text-xs text-rose hover:bg-rose/10"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-on-surface/40">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </GlassCard>
       )}

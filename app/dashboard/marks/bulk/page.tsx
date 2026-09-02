@@ -432,7 +432,8 @@ export default function BulkMarksPage() {
             No students in this class/section. Pick a class to start entering marks.
           </p>
         ) : (
-          <table className="w-full text-sm min-w-[720px]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                 <th className="pb-3 pr-4">Roll</th>
@@ -511,7 +512,8 @@ export default function BulkMarksPage() {
                 );
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </GlassCard>
 
