@@ -95,6 +95,17 @@ export type Payment = {
   method: string;
 };
 
+export type Bill = {
+  id: string;
+  student_id: string;
+  student_name: string;
+  class_id: string;
+  class_name: string;
+  month: string; // "2024-10"
+  amount: number;
+  status: "paid" | "pending";
+};
+
 export type Staff = {
   id: string;
   name: string;
@@ -342,6 +353,7 @@ const col = {
   marks: () => collection(db!, "marks"),
   attendance: () => collection(db!, "attendance"),
   payments: () => collection(db!, "payments"),
+  bills: () => collection(db!, "bills"),
   staff: () => collection(db!, "staff"),
   leaves: () => collection(db!, "leave_requests"),
   notifications: () => collection(db!, "notifications"),
@@ -501,6 +513,39 @@ export async function addPayment(data: Omit<Payment, "id">) {
 
 export async function deletePayment(id: string) {
   await deleteDoc(doc(db!, "payments", id));
+}
+
+/** Monthly fee bills per student, deduped by student_id + month. */
+export async function listBills(): Promise<Bill[]> {
+  const snap = await getDocs(col.bills());
+  return snap.docs.map((d) => ({ ...(d.data() as Bill), id: d.id }));
+}
+
+export async function generateBills(classId: string, month: string, amount: number): Promise<number> {
+  const cls = await listClasses();
+  const klass = cls.find((c) => c.id === classId);
+  const students = await studentsInClass(classId);
+  const bills = await listBills();
+  const have = new Set(bills.filter((b) => b.month === month && b.class_id === classId).map((b) => b.student_id));
+  let created = 0;
+  for (const s of students) {
+    if (have.has(s.id)) continue;
+    await setDoc(doc(col.bills()), {
+      student_id: s.id,
+      student_name: s.name,
+      class_id: classId,
+      class_name: klass ? `${klass.name}${klass.section ? ` - ${klass.section}` : ""}` : "",
+      month,
+      amount,
+      status: "pending",
+    });
+    created++;
+  }
+  return created;
+}
+
+export async function updateBillStatus(id: string, status: Bill["status"]) {
+  await updateDoc(doc(db!, "bills", id), { status });
 }
 
 /** Resolve student names to a map of id → name for displays. */

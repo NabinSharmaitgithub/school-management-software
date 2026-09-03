@@ -7,8 +7,11 @@ import {
   deletePayment,
   listStudents,
   listClasses,
+  listBills,
+  generateBills,
+  updateBillStatus,
 } from "@/lib/data";
-import type { Class, Student } from "@/lib/data";
+import type { Class, Student, Bill } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, Alert } from "@/components/ui";
 import PayrollSection from "@/components/payroll/PayrollSection";
 
@@ -19,6 +22,19 @@ function today() {
 }
 
 const CURR = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function monthLabel(month: string) {
+  const [y, m] = month.split("-");
+  if (!m) return month;
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+const MONTHS = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - i);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+});
 
 export default function FinancePage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -41,15 +57,22 @@ export default function FinancePage() {
     method: "Cash",
   });
 
-  const [tab, setTab] = useState<"collections" | "payroll">("collections");
+  const [tab, setTab] = useState<"collections" | "payroll" | "bills">("collections");
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [billClass, setBillClass] = useState("");
+  const [billMonth, setBillMonth] = useState(MONTHS[0]);
+  const [billAmount, setBillAmount] = useState("");
+  const [genOpen, setGenOpen] = useState(false);
+  const [genMsg, setGenMsg] = useState("");
 
   async function load() {
     try {
-      const [p, s, c] = await Promise.all([listPayments(), listStudents(), listClasses()]);
+      const [p, s, c, b] = await Promise.all([listPayments(), listStudents(), listClasses(), listBills()]);
       setPayments(p);
       setAllStudents(s);
       setStudents(Object.fromEntries(s.map((st) => [st.id, st.name])));
       setClasses(c);
+      setBills(b);
     } finally {
       setLoading(false);
     }
@@ -95,6 +118,29 @@ export default function FinancePage() {
     load();
   }
 
+  async function onGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setGenMsg("");
+    const amount = Number(billAmount);
+    if (!billClass || !isFinite(amount) || amount <= 0) {
+      setGenMsg("Pick a class and enter a positive fee amount.");
+      return;
+    }
+    try {
+      const n = await generateBills(billClass, billMonth, amount);
+      setGenMsg(`${n ? `${n} bill${n > 1 ? "s" : ""} generated for ` : "No new bills "}${monthLabel(billMonth)}.`);
+      setGenOpen(false);
+      load();
+    } catch (err) {
+      setGenMsg((err as Error).message);
+    }
+  }
+
+  async function toggleBill(bill: Bill) {
+    await updateBillStatus(bill.id, bill.status === "paid" ? "pending" : "paid");
+    load();
+  }
+
   const classOptions = classes
     .filter((c, i, a) => a.findIndex((x) => x.id === c.id) === i)
     .sort((a, b) => `${a.name} ${a.section}`.localeCompare(`${b.name} ${b.section}`));
@@ -125,6 +171,8 @@ export default function FinancePage() {
             <p className="text-sm text-on-surface/60">
               {tab === "payroll"
                 ? "Staff salaries, payslips and payment tracking"
+                : tab === "bills"
+                ? "Monthly fee bills per student"
                 : `${payments.length} payments · Total ${CURR(total)}`}
             </p>
           </div>
@@ -134,9 +182,15 @@ export default function FinancePage() {
               Record Payment
             </GlassButton>
           )}
+          {tab === "bills" && (
+            <GlassButton onClick={() => setGenOpen(true)}>
+              <span className="material-symbols-outlined text-lg">receipt_long</span>
+              Generate Bills
+            </GlassButton>
+          )}
         </div>
         <div className="flex gap-2 mt-4 border-b border-on-surface/10">
-          {(["collections", "payroll"] as const).map((t) => (
+          {(["collections", "payroll", "bills"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -146,7 +200,7 @@ export default function FinancePage() {
                   : "border-transparent text-on-surface/50 hover:text-on-surface"
               }`}
             >
-              {t === "collections" ? "Collections" : "Payroll"}
+              {t === "collections" ? "Collections" : t === "payroll" ? "Payroll" : "Bills"}
             </button>
           ))}
         </div>
@@ -205,6 +259,123 @@ export default function FinancePage() {
       )}
 
       {tab === "payroll" && <PayrollSection />}
+
+      {tab === "bills" && (
+        <GlassCard className="p-4">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <Field label="Class">
+              <Select className="!w-auto" value={billClass} onChange={(e) => setBillClass(e.target.value)}>
+                <option value="">All classes</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.section ? ` - ${c.section}` : ""}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Month">
+              <Select className="!w-auto" value={billMonth} onChange={(e) => setBillMonth(e.target.value)}>
+                {MONTHS.map((m) => (
+                  <option key={m} value={m}>{monthLabel(m)}</option>
+                ))}
+              </Select>
+            </Field>
+            {genMsg && (
+              <p className="text-xs text-on-surface/60 bg-white/40 border border-on-surface/10 rounded-lg px-3 py-2">
+                {genMsg}
+              </p>
+            )}
+          </div>
+
+          {(() => {
+            const rows = bills
+              .filter((b) => b.month === billMonth && (!billClass || b.class_id === billClass))
+              .sort((a, b) => a.student_name.localeCompare(b.student_name));
+            return rows.length === 0 ? (
+              <p className="text-sm text-on-surface/60 py-8 text-center">
+                No bills for {monthLabel(billMonth)}. Click “Generate Bills” to create them.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[560px]">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50 border-b border-on-surface/10">
+                      <th className="py-2 pr-2">Student</th>
+                      <th className="py-2 pr-2">Class</th>
+                      <th className="py-2 pr-2 text-right">Amount</th>
+                      <th className="py-2 pr-2">Status</th>
+                      <th className="py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((b) => (
+                      <tr key={b.id} className="border-b border-on-surface/5">
+                        <td className="py-3 pr-2 font-medium text-on-surface">{b.student_name}</td>
+                        <td className="py-3 pr-2 text-on-surface/70">{b.class_name}</td>
+                        <td className="py-3 pr-2 text-right">{CURR(b.amount)}</td>
+                        <td className="py-3 pr-2">
+                          <button
+                            onClick={() => toggleBill(b)}
+                            title="Toggle paid/pending"
+                            className={b.status === "paid" ? "text-primary font-medium" : "text-on-surface/50"}
+                          >
+                            {b.status}
+                          </button>
+                        </td>
+                        <td className="py-3"></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="font-semibold text-on-surface">
+                      <td className="py-2 pr-2 pt-3" colSpan={2}>Total</td>
+                      <td className="py-2 pr-2 pt-3 text-right">{CURR(rows.reduce((s, b) => s + b.amount, 0))}</td>
+                      <td colSpan={2} />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            );
+          })()}
+        </GlassCard>
+      )}
+
+      <Modal open={genOpen} onClose={() => { setGenOpen(false); setGenMsg(""); }} title="Generate bills">
+        <form className="space-y-4" onSubmit={onGenerate}>
+          <Field label="Class *">
+            <Select value={billClass} onChange={(e) => setBillClass(e.target.value)} required>
+              <option value="">Select class…</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.section ? ` - ${c.section}` : ""}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Month">
+            <Select value={billMonth} onChange={(e) => setBillMonth(e.target.value)}>
+              {MONTHS.map((m) => (
+                <option key={m} value={m}>{monthLabel(m)}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Fee amount (₹) *">
+            <Input type="number" inputMode="numeric" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} required />
+          </Field>
+          {genMsg && <Alert message={genMsg} type="error" />}
+          <div className="flex justify-end gap-3">
+            <GlassButton type="button" variant="ghost" onClick={() => { setGenOpen(false); setGenMsg(""); }}>
+              Cancel
+            </GlassButton>
+            <GlassButton type="submit">
+              <span className="material-symbols-outlined text-lg">receipt_long</span>
+              Generate
+            </GlassButton>
+          </div>
+        </form>
+      </Modal>
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Record payment">
         <form className="space-y-4" onSubmit={onAdd}>
