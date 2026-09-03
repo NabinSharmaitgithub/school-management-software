@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listPayments, addPayment, deletePayment, studentNames } from "@/lib/data";
+import { listPayments, addPayment, deletePayment, listStudents, listClasses } from "@/lib/data";
+import type { Class, Student } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, Alert } from "@/components/ui";
 
 type Payment = { id: string; student_id: string; description: string; amount: number; date: string; method: string };
@@ -13,11 +14,16 @@ function today() {
 export default function FinancePage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [students, setStudents] = useState<Record<string, string>>({});
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [classId, setClassId] = useState("");
+  const [section, setSection] = useState("");
   const [form, setForm] = useState({
     student_id: "",
     description: "",
@@ -28,9 +34,11 @@ export default function FinancePage() {
 
   async function load() {
     try {
-      const [p, s] = await Promise.all([listPayments(), studentNames()]);
+      const [p, s, c] = await Promise.all([listPayments(), listStudents(), listClasses()]);
       setPayments(p);
-      setStudents(s);
+      setAllStudents(s);
+      setStudents(Object.fromEntries(s.map((st) => [st.id, st.name])));
+      setClasses(c);
     } finally {
       setLoading(false);
     }
@@ -76,9 +84,26 @@ export default function FinancePage() {
     load();
   }
 
-  const studentOptions = Object.entries(students)
-    .sort((a, b) => a[1].localeCompare(b[1]))
-    .map(([id, name]) => ({ id, name }));
+  const classOptions = classes
+    .filter((c, i, a) => a.findIndex((x) => x.id === c.id) === i)
+    .sort((a, b) => `${a.name} ${a.section}`.localeCompare(`${b.name} ${b.section}`));
+  const sectionOptions = classId
+    ? classes.filter((c) => c.id === classId && c.section)
+        .map((c) => c.section)
+        .filter((s, i, a) => a.indexOf(s) === i)
+        .sort((a, b) => a.localeCompare(b))
+    : [];
+  const sectionSet = new Set(classes.map((c) => `${c.id}/${c.section}`));
+
+  const q = search.trim().toLowerCase();
+  const filteredStudents = allStudents
+    .filter(
+      (s) =>
+        (!classId || s.class_id === classId) &&
+        (!section || sectionSet.has(`${s.class_id}/${section}`)) &&
+        (!q || s.name.toLowerCase().includes(q))
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-6">
@@ -150,14 +175,49 @@ export default function FinancePage() {
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Record payment">
         <form className="space-y-4" onSubmit={onAdd}>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Class">
+              <Select
+                value={classId}
+                onChange={(e) => {
+                  setClassId(e.target.value);
+                  setSection("");
+                }}
+              >
+                <option value="">All classes</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Section">
+              <Select value={section} onChange={(e) => setSection(e.target.value)} disabled={!classId}>
+                <option value="">{classId ? "All sections" : "Select class"}</option>
+                {sectionOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+            </Field>
+          </div>
           <Field label="Student *">
+            <Input
+              placeholder="Search student by name…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <Select
               value={form.student_id}
               onChange={(e) => setForm((f) => ({ ...f, student_id: e.target.value }))}
               required
             >
-              <option value="">Select student…</option>
-              {studentOptions.map((s) => (
+              <option value="">
+                {filteredStudents.length === 0
+                  ? "No students found…"
+                  : `Select student… (${filteredStudents.length})`}
+              </option>
+              {filteredStudents.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
