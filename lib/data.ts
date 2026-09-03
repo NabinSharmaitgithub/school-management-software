@@ -93,17 +93,46 @@ export type Payment = {
   amount: number;
   date: string; // YYYY-MM-DD
   method: string;
+  invoice_id?: string;
+  receipt_number?: string;
+  transaction_ref?: string;
+  recorded_by?: string;
 };
 
-export type Bill = {
+export type FeeInvoiceStatus = "PENDING" | "PARTIAL" | "PAID" | "OVERDUE";
+
+export type FeeInvoice = {
   id: string;
   student_id: string;
   student_name: string;
   class_id: string;
   class_name: string;
+  academic_year: string;
   month: string; // "2024-10"
-  amount: number;
-  status: "paid" | "pending";
+  fee_items: { name: string; amount: number }[];
+  total: number; // sum of fee_items, before discount/late fee
+  discount: number;
+  late_fee: number;
+  payable: number; // total - discount + late_fee
+  paid: number; // sum of payments against this invoice
+  due_date: string; // YYYY-MM-DD
+  status: FeeInvoiceStatus;
+};
+
+export type Discount = {
+  id: string;
+  student_id: string;
+  type: "PERCENT" | "FIXED";
+  value: number;
+  reason: string;
+  approved_by: string;
+  active: boolean;
+};
+
+export type LateFee = {
+  grace_days: number;
+  penalty_type: "PERCENT" | "FIXED";
+  penalty_value: number;
 };
 
 export type Staff = {
@@ -353,7 +382,9 @@ const col = {
   marks: () => collection(db!, "marks"),
   attendance: () => collection(db!, "attendance"),
   payments: () => collection(db!, "payments"),
-  bills: () => collection(db!, "bills"),
+  fee_invoices: () => collection(db!, "fee_invoices"),
+  discounts: () => collection(db!, "discounts"),
+  late_fees: () => collection(db!, "late_fees"),
   staff: () => collection(db!, "staff"),
   leaves: () => collection(db!, "leave_requests"),
   notifications: () => collection(db!, "notifications"),
@@ -515,38 +546,147 @@ export async function deletePayment(id: string) {
   await deleteDoc(doc(db!, "payments", id));
 }
 
-/** Monthly fee bills per student, deduped by student_id + month. */
-export async function listBills(): Promise<Bill[]> {
-  const snap = await getDocs(col.bills());
-  return snap.docs.map((d) => ({ ...(d.data() as Bill), id: d.id }));
+/** --- Fee & Billing --- */
+
+export async function listInvoices(): Promise<FeeInvoice[]> {
+  const snap = await getDocs(col.fee_invoices());
+  return snap.docs.map((d) => ({ ...(d.data() as FeeInvoice), id: d.id }));
 }
 
-export async function generateBills(classId: string, month: string, amount: number): Promise<number> {
-  const cls = await listClasses();
+async function getDiscount(studentId: string): Promise<Discount | null> {
+  const snap = await getDocs(col.discounts());
+  const list = snap.docs.map((d) => ({ ...(d.data() as Discount), id: d.id }));
+  const act = list.find((x) => x.student_id === studentId && x.active);
+  return act ?? null;
+}
+
+export async function listDiscounts(): Promise<Discount[]> {
+  const snap = await getDocs(col.discounts());
+  return snap.docs.map((d) => ({ ...(d.data() as Discount), id: d.id }));
+}
+
+export async function addDiscount(data: Omit<Discount, "id">) {
+  const ref = doc(col.discounts());
+  await setDoc(ref, { ...data, active: data.active ?? true });
+  return ref.id;
+}
+
+async function getLateFee(): Promise<LateFee> {
+  const ref = doc(db!, "late_fees", "config");
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return { grace_days: 0, penalty_type: "FIXED", penalty_value: 0 };
+  return snap.data() as LateFee;
+}
+
+export async function setLateFee(data: LateFee) {
+  await setDoc(doc(db!, "late_fees", "config"), data);
+}
+
+/** Default due date = 10th of the invoice's month. */
+function dueDateFor(month: string): string {
+  const [y, m] = month.split("-");
+  return new Date(Number(y), Number(m) - 1, 10).toISOString().slice(0, 10);
+}
+
+/** Hydrate an invoice with late fee + OVERDUE derived at read time. */
+function hydrate(inv: FeeInvoice, today: string, lf: LateFee): FeeInvoice {
+  let lateFee = inv.late_fee;
+  let status = inv.status;
+  const due = new Date(inv.due_date);
+  due.setDate(due.getDate() + (lf.grace_days || 0));
+  if (inv.status !== "PAID" && today > due.toISOString().slice(0, 10)) {
+    status = "OVERDUE";
+    const base = inv.total - inv.discount;
+    lateFee = lf.penalty_type === "PERCENT" ? Math.round((base * (lf.penalty_value || 0)) / 100) : lf.penalty_value || 0;
+  }
+  return { ...inv, late_fee: lateFee, payable: inv.total - inv.discount + lateFee, status };
+}
+
+/** Generate monthly fee invoices from the class fee structure (+ discounts). Pass studentId for one student. */
+export async function generateInvoices(classId: string, month: string, studentId?: string): Promise<number> {
+  const [cls, fees, students, invs, discounts] = await Promise.all([
+    listClasses(),
+    listFeeStructures(),
+    studentId ? (await listStudents()).filter((s) => s.id === studentId) : studentsInClass(classId),
+    listInvoices(),
+    listDiscounts(),
+  ]);
   const klass = cls.find((c) => c.id === classId);
-  const students = await studentsInClass(classId);
-  const bills = await listBills();
-  const have = new Set(bills.filter((b) => b.month === month && b.class_id === classId).map((b) => b.student_id));
+  const struct = fees.find((f) => f.class_id === classId);
+  if (!struct || !struct.fees.length) return 0;
+  const have = new Set(invs.filter((i) => i.month === month && i.student_id === (studentId ?? "")).map((i) => i.student_id));
+  const classDis = discounts.filter((d) => d.active);
   let created = 0;
   for (const s of students) {
     if (have.has(s.id)) continue;
-    await setDoc(doc(col.bills()), {
+    const total = struct.fees.reduce((sum, f) => sum + f.amount, 0);
+    const dis = classDis.find((d) => d.student_id === s.id);
+    const discount = dis ? (dis.type === "PERCENT" ? Math.round((total * dis.value) / 100) : Math.min(dis.value, total)) : 0;
+    await setDoc(doc(col.fee_invoices()), {
       student_id: s.id,
       student_name: s.name,
       class_id: classId,
       class_name: klass ? `${klass.name}${klass.section ? ` - ${klass.section}` : ""}` : "",
+      academic_year: struct.academic_year,
       month,
-      amount,
-      status: "pending",
+      fee_items: struct.fees.map((f) => ({ name: f.name, amount: f.amount })),
+      total,
+      discount,
+      late_fee: 0,
+      payable: total - discount,
+      paid: 0,
+      due_date: dueDateFor(month),
+      status: "PENDING",
     });
     created++;
   }
   return created;
 }
 
-export async function updateBillStatus(id: string, status: Bill["status"]) {
-  await updateDoc(doc(db!, "bills", id), { status });
+/** List invoices, optionally filtered, with OVERDUE/late-fee derived from today. */
+export async function listInvoicesHydrated(month?: string, classId?: string, status?: string): Promise<FeeInvoice[]> {
+  const [invs, lf] = await Promise.all([listInvoices(), getLateFee()]);
+  const today = new Date().toISOString().slice(0, 10);
+  return invs
+    .map((i) => hydrate(i, today, lf))
+    .filter((i) => (!month || i.month === month) && (!classId || i.class_id === classId) && (!status || i.status === status))
+    .sort((a, b) => a.student_name.localeCompare(b.student_name));
 }
+
+/** Record a manual payment against an invoice; updates paid/status + generates receipt number. */
+export async function recordInvoicePayment(
+  invoiceId: string,
+  amount: number,
+  method: string,
+  date: string,
+  transactionRef?: string,
+  recordedBy?: string
+): Promise<string> {
+  const inv = await listInvoices();
+  const target = inv.find((i) => i.id === invoiceId);
+  if (!target) throw new Error("Invoice not found.");
+  const receipt = `RCT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(Math.random() * 9000 + 1000)}`;
+  await addPayment({
+    student_id: target.student_id,
+    description: `Fee payment · ${target.month} · ${target.student_name}`,
+    amount,
+    date,
+    method,
+    invoice_id: invoiceId,
+    receipt_number: receipt,
+    transaction_ref: transactionRef,
+    recorded_by: recordedBy,
+  });
+  const paid = (target.paid || 0) + amount;
+  const status = paid >= target.total - target.discount ? "PAID" : "PARTIAL";
+  await updateDoc(doc(db!, "fee_invoices", invoiceId), { paid, status });
+  return receipt;
+}
+
+export async function deleteInvoice(id: string) {
+  await deleteDoc(doc(db!, "fee_invoices", id));
+}
+
 
 /** Resolve student names to a map of id → name for displays. */
 export async function studentNames(): Promise<Record<string, string>> {
