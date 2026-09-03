@@ -9,6 +9,7 @@ export const NAV_ITEMS = [
   { label: "Assign Teachers", icon: "assignment_ind", href: "/dashboard/assignments" },
   { label: "Finance", icon: "payments", href: "/dashboard/finance" },
   { label: "Communications", icon: "campaign", href: "/dashboard/communications" },
+  { label: "My Fees", icon: "receipt_long", href: "/dashboard/my-fees" },
   { label: "Library", icon: "local_library", href: "/dashboard/library" },
   { label: "Transport", icon: "directions_bus", href: "/dashboard/transport" },
   { label: "Hostel", icon: "apartment", href: "/dashboard/hostel" },

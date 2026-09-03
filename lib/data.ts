@@ -135,6 +135,15 @@ export type LateFee = {
   penalty_value: number;
 };
 
+export type UserRole = "Admin" | "Teacher" | "Student" | "Parent";
+
+export type UserRecord = {
+  id: string;
+  email: string;
+  role: UserRole;
+  student_id?: string;
+};
+
 export type Staff = {
   id: string;
   name: string;
@@ -385,6 +394,7 @@ const col = {
   fee_invoices: () => collection(db!, "fee_invoices"),
   discounts: () => collection(db!, "discounts"),
   late_fees: () => collection(db!, "late_fees"),
+  users: () => collection(db!, "users"),
   staff: () => collection(db!, "staff"),
   leaves: () => collection(db!, "leave_requests"),
   notifications: () => collection(db!, "notifications"),
@@ -685,6 +695,31 @@ export async function recordInvoicePayment(
 
 export async function deleteInvoice(id: string) {
   await deleteDoc(doc(db!, "fee_invoices", id));
+}
+
+/** --- User ↔ student linking (for the read-only My Fees portal) --- */
+
+// Upsert a users/{email} record on sign-in so admins can link a student later.
+export async function ensureUser(email: string, role: UserRole = "Parent") {
+  const ref = doc(col.users(), email);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, { email, role, createdAt: serverTimestamp() });
+  }
+}
+
+export async function getUserByEmail(email: string): Promise<UserRecord | null> {
+  const snap = await getDoc(doc(col.users(), email));
+  return snap.exists() ? ({ ...(snap.data() as UserRecord), id: email }) : null;
+}
+
+export async function listUsers(): Promise<UserRecord[]> {
+  const snap = await getDocs(col.users());
+  return snap.docs.map((d) => ({ ...(d.data() as UserRecord), id: d.id }));
+}
+
+export async function setUserStudent(email: string, studentId: string) {
+  await updateDoc(doc(col.users(), email), { student_id: studentId });
 }
 
 

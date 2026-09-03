@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { ensureUser } from "@/lib/data";
 import { GlassButton, Input, Field, Alert } from "@/components/ui";
 
 const ROLES = ["Admin", "Teacher", "Student", "Parent"] as const;
@@ -70,6 +71,7 @@ export default function LoginPage() {
         return;
       }
       await signInWithEmailAndPassword(auth, email, password);
+      await ensureUser(email.trim(), role);
       router.push("/dashboard");
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code;

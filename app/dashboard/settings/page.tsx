@@ -10,8 +10,11 @@ import {
   deleteFeeStructure,
   listClasses,
   uploadSchoolLogo,
+  listUsers,
+  listStudents,
+  setUserStudent,
 } from "@/lib/data";
-import type { SchoolSettings, FeeStructure, FeeItem } from "@/lib/data";
+import type { SchoolSettings, FeeStructure, FeeItem, UserRecord, Student } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
 type Tab = "general" | "branding" | "fees";
@@ -76,16 +79,20 @@ export default function SettingsPage() {
   const [structForm, setStructForm] = useState(emptyStructure());
   const [yearFilter, setYearFilter] = useState("All Years");
   const [confirmDel, setConfirmDel] = useState("");
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [studentList, setStudentList] = useState<Student[]>([]);
 
   const load = async () => {
     try {
-      const [s, fs, c] = await Promise.all([getSchoolSettings(), listFeeStructures(), listClasses()]);
+      const [s, fs, c, u, st] = await Promise.all([getSchoolSettings(), listFeeStructures(), listClasses(), listUsers(), listStudents()]);
       setSettings(s);
       setForm({ school_name: s.school_name, school_address: s.school_address, timezone: s.timezone, currency: s.currency, fee_clearance_date: s.fee_clearance_date ?? "" });
       setPrimary(s.primary_color);
       setLogoName(s.logo_url ? "Logo uploaded" : "");
       setStructures(fs);
       setClasses(c.map((x) => ({ id: x.id, label: `${x.name} ${x.section}`.trim() })));
+      setUsers(u);
+      setStudentList(st);
       setError("");
     } catch (e) {
       setError((e as Error).message);
@@ -414,6 +421,7 @@ export default function SettingsPage() {
 
           {/* ── FEE STRUCTURE ─────────────────────────────────── */}
           {tab === "fees" && (
+            <>
             <GlassCard className="p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
@@ -500,6 +508,52 @@ export default function SettingsPage() {
                 })}
               </div>
             </GlassCard>
+
+            <GlassCard className="p-4 sm:p-6">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold">Portal Access</h2>
+                <p className="text-xs text-on-surface/60">
+                  Link a login (Student/Parent) to a student so they can view their fee statement on &ldquo;My Fees&rdquo;.
+                </p>
+              </div>
+              {users.length === 0 ? (
+                <p className="text-sm text-on-surface/60 py-6 text-center">
+                  No portal accounts yet. Accounts are created when a Student/Parent role signs in.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {users.map((usr) => (
+                    <div
+                      key={usr.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-on-surface truncate">{usr.email}</p>
+                        <p className="text-[11px] text-on-surface/50">Role: {usr.role}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          className="!w-auto min-w-[200px]"
+                          value={usr.student_id ?? ""}
+                          onChange={async (e) => {
+                            const val = e.target.value;
+                            if (!val) return;
+                            await setUserStudent(usr.id, val);
+                            setUsers((list) => list.map((x) => (x.id === usr.id ? { ...x, student_id: val } : x)));
+                          }}
+                        >
+                          <option value="">— No student —</option>
+                          {studentList.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </GlassCard>
+            </>
           )}
         </>
       )}
