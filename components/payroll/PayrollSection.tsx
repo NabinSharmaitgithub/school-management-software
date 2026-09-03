@@ -30,7 +30,7 @@ const MONTHS = Array.from({ length: 6 }, (_, i) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 });
 
-export default function PayrollPage() {
+export default function PayrollSection() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,22 +139,10 @@ export default function PayrollPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Payroll</h1>
-          <p className="text-sm text-on-surface/60">Monthly salaries, payslips and payment tracking</p>
-        </div>
-        <GlassButton disabled={running} onClick={() => onRunPayroll({ preventDefault: () => {} } as React.FormEvent)}>
-          <span className="material-symbols-outlined text-lg">bolt</span>
-          {running ? "Generating…" : "Run Payroll"}
-        </GlassButton>
-      </header>
-
+    <>
       {error && <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{error}</p>}
       {toast && <p className="text-xs text-success bg-emerald/10 border border-emerald/20 rounded-lg px-3 py-2">{toast}</p>}
 
-      {/* ── Summary strip ──────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <GlassCard className="p-4">
           <p className="text-[11px] uppercase text-on-surface/50 font-semibold">Payroll Month</p>
@@ -269,7 +257,6 @@ export default function PayrollPage() {
         )}
       </GlassCard>
 
-      {/* ── Payslip preview ────────────────────────────────── */}
       <Modal open={!!preview} onClose={() => setPreview(null)} title={`Payslip · ${preview ? monthLabel(preview.month) : ""}`}>
         {preview && (
           <div>
@@ -345,7 +332,6 @@ export default function PayrollPage() {
         )}
       </Modal>
 
-      {/* ── Edit amounts ───────────────────────────────────── */}
       <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit Amounts · ${editing ? editing.staff_name : ""}`}>
         {editing && (
           <form onSubmit={saveAmounts} className="space-y-4">
@@ -368,6 +354,6 @@ export default function PayrollPage() {
           </form>
         )}
       </Modal>
-    </div>
+    </>
   );
 }

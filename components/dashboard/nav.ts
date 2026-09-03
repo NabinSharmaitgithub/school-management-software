@@ -17,7 +17,6 @@ export const NAV_ITEMS = [
   { label: "Report Cards", icon: "description", href: "/dashboard/report-cards" },
   { label: "ID Cards", icon: "credit_card", href: "/dashboard/id-cards" },
   { label: "Analytics", icon: "query_stats", href: "/dashboard/analytics" },
-  { label: "Payroll", icon: "payments", href: "/dashboard/payroll" },
   { label: "Settings", icon: "settings", href: "/dashboard/settings" },
 ];
 
@@ -32,7 +31,6 @@ const ADMIN_ONLY = [
   "/dashboard/report-cards",
   "/dashboard/id-cards",
   "/dashboard/analytics",
-  "/dashboard/payroll",
   "/dashboard/settings",
 ];
 
