@@ -12,8 +12,7 @@ import {
   serverTimestamp,
   deleteField,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
 export type Student = {
   id: string;
@@ -829,27 +828,55 @@ export async function updateSchoolSettings(data: Partial<SchoolSettings>) {
   await setDoc(doc(db!, "settings", "school"), data, { merge: true });
 }
 
-/** Upload the school logo to Storage and persist its download URL in settings. */
+/** Upload to Cloudinary (signed via server route) and return the secure URL. */
+async function uploadToCloudinary(file: File, folder: string): Promise<string> {
+  const res = await fetch("/api/cloudinary/sign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error || "Upload failed.");
+  }
+  const { cloudName, apiKey, timestamp, signature, public_id } = await res.json();
+
+  const form = new FormData();
+  form.append("file", file);
+  form.append("api_key", apiKey);
+  form.append("timestamp", String(timestamp));
+  form.append("signature", signature);
+  form.append("public_id", public_id);
+  form.append("folder", folder);
+  form.append("overwrite", "false");
+
+  const up = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: "POST", body: form }
+  );
+  if (!up.ok) {
+    const text = await up.text().catch(() => "");
+    throw new Error(text || "Upload failed.");
+  }
+  const data = await up.json();
+  return data.secure_url as string;
+}
+
+/** Upload the school logo and persist its URL in settings. */
 export async function uploadSchoolLogo(file: File): Promise<string> {
-  const p = ref(storage!, `settings/school-logo${Date.now()}`); // ponytail: newest-URL trick; point all readers at settings.logo_url so old blobs can be GC'd later
-  await uploadBytes(p, file);
-  const url = await getDownloadURL(p);
+  const url = await uploadToCloudinary(file, "settings/logo"); // ponytail: newest-URL trick; point all readers at settings.logo_url so old blobs can be GC'd later
   await updateSchoolSettings({ logo_url: url });
   return url;
 }
 
-/** Upload a student profile photo and return its download URL (caller stores it on the doc). */
+/** Upload a student profile photo and return its URL (caller stores it on the doc). */
 export async function uploadStudentPhoto(file: File): Promise<string> {
-  const p = ref(storage!, `photos/students/${Date.now()}`); // ponytail: newest-URL trick; old blobs GC-able later
-  await uploadBytes(p, file);
-  return getDownloadURL(p);
+  return uploadToCloudinary(file, "photos/students");
 }
 
-/** Upload a staff profile photo and return its download URL (caller stores it on the doc). */
+/** Upload a staff profile photo and return its URL (caller stores it on the doc). */
 export async function uploadStaffPhoto(file: File): Promise<string> {
-  const p = ref(storage!, `photos/staff/${Date.now()}`); // ponytail: newest-URL trick; old blobs GC-able later
-  await uploadBytes(p, file);
-  return getDownloadURL(p);
+  return uploadToCloudinary(file, "photos/staff");
 }
 
 /** Fee structures (templates applied per class / academic year). */

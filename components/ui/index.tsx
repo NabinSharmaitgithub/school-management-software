@@ -218,16 +218,40 @@ export function PhotoUpload({
 }) {
   const [uploading, setUploading] = useState(false);
   const [localUrl, setLocalUrl] = useState("");
+  const [error, setError] = useState("");
 
   async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setError("");
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Photo is over 2MB — please pick a smaller image.");
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
     setLocalUrl(URL.createObjectURL(file)); // optimistic preview before upload lands
+    const timer = window.setTimeout(() => {
+      setUploading(false);
+      setError("Upload timed out — check your connection and try again.");
+    }, 30000);
     try {
       const url = await onFile(file);
+      window.clearTimeout(timer);
       setLocalUrl(url);
+    } catch (err) {
+      console.error("photo upload failed:", err);
+      setUploading(false);
+      setError("Upload failed — check your connection and try again.");
     } finally {
+      window.clearTimeout(timer);
       setUploading(false);
       e.target.value = "";
     }
@@ -247,6 +271,7 @@ export function PhotoUpload({
         {uploading ? "Uploading…" : localUrl || value ? "Change photo" : "Upload photo"}
         <input type="file" accept="image/*" className="hidden" onChange={onChange} />
       </label>
+      {error ? <span className="text-xs text-red-400">{error}</span> : null}
     </div>
   );
 }
