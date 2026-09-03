@@ -972,6 +972,10 @@ export async function updatePayslipStatus(id: string, status: Payslip["status"])
   });
 }
 
+export async function updatePayslipAmounts(id: string, basic: number, allowances: number, deductions: number) {
+  await updateDoc(doc(db!, "payslips", id), { basic, allowances, deductions });
+}
+
 /** Weekly timetable: one entry per class.slot (period). */
 export async function listTimetable(): Promise<TimetableEntry[]> {
   const snap = await getDocs(col.timetable());

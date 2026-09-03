@@ -6,9 +6,10 @@ import {
   getPayslips,
   generatePayroll,
   updatePayslipStatus,
+  updatePayslipAmounts,
 } from "@/lib/data";
 import type { Staff, Payslip } from "@/lib/data";
-import { Field, GlassButton, GlassCard, Modal, Select, StatusPill } from "@/components/ui";
+import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
 const CURR = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
@@ -40,6 +41,10 @@ export default function PayrollPage() {
   const [running, setRunning] = useState(false);
   const [preview, setPreview] = useState<Payslip | null>(null);
   const [toast, setToast] = useState("");
+  const [editing, setEditing] = useState<Payslip | null>(null);
+  const [basic, setBasic] = useState("");
+  const [allowances, setAllowances] = useState("");
+  const [deductions, setDeductions] = useState("");
 
   const load = async () => {
     try {
@@ -105,6 +110,29 @@ export default function PayrollPage() {
       await updatePayslipStatus(ps.id, status);
       setPayslips((prev) => prev.map((p) => (p.id === ps.id ? { ...p, status } : p)));
       if (preview?.id === ps.id) setPreview((pr) => (pr ? { ...pr, status } : pr));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  function openEdit(ps: Payslip) {
+    setBasic(String(ps.basic));
+    setAllowances(String(ps.allowances));
+    setDeductions(String(ps.deductions));
+    setEditing(ps);
+  }
+
+  async function saveAmounts(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    try {
+      const b = Number(basic), a = Number(allowances), d = Number(deductions);
+      await updatePayslipAmounts(editing.id, b, a, d);
+      const updated = { ...editing, basic: b, allowances: a, deductions: d };
+      setPayslips((prev) => prev.map((p) => (p.id === editing.id ? updated : p)));
+      if (preview?.id === editing.id) setPreview(updated);
+      setEditing(null);
+      setToast("Payslip amounts updated.");
     } catch (e) {
       setError((e as Error).message);
     }
@@ -293,6 +321,10 @@ export default function PayrollPage() {
 
             <div className="flex justify-between items-center mt-4">
               <div className="flex gap-2">
+                <GlassButton variant="ghost" onClick={() => openEdit(preview)}>
+                  <span className="material-symbols-outlined text-lg">edit</span>
+                  Edit Amounts
+                </GlassButton>
                 {preview.status === "pending" ? (
                   <GlassButton onClick={() => setStatus(preview, "paid")}>
                     <span className="material-symbols-outlined text-lg">check</span>
@@ -310,6 +342,30 @@ export default function PayrollPage() {
               </GlassButton>
             </div>
           </div>
+        )}
+      </Modal>
+
+      {/* ── Edit amounts ───────────────────────────────────── */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit Amounts · ${editing ? editing.staff_name : ""}`}>
+        {editing && (
+          <form onSubmit={saveAmounts} className="space-y-4">
+            <Field label="Basic Salary">
+              <Input type="number" inputMode="numeric" value={basic} onChange={(e) => setBasic(e.target.value)} required />
+            </Field>
+            <Field label="Allowances">
+              <Input type="number" inputMode="numeric" value={allowances} onChange={(e) => setAllowances(e.target.value)} required />
+            </Field>
+            <Field label="Deductions">
+              <Input type="number" inputMode="numeric" value={deductions} onChange={(e) => setDeductions(e.target.value)} required />
+            </Field>
+            <div className="flex justify-between items-center pt-1">
+              <p className="text-sm text-on-surface/70">Net Payable: <span className="font-semibold text-on-surface">{CURR(Number(basic) + Number(allowances) - Number(deductions))}</span></p>
+              <GlassButton type="submit">
+                <span className="material-symbols-outlined text-lg">save</span>
+                Save
+              </GlassButton>
+            </div>
+          </form>
         )}
       </Modal>
     </div>
