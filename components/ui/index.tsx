@@ -78,14 +78,17 @@ export function Modal({
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
+    if (!open) return;
     previousActiveElement.current = document.activeElement as HTMLElement;
     panelRef.current?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
       }
       if (e.key === "Tab" && panelRef.current) {
         const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(
@@ -112,7 +115,7 @@ export function Modal({
       document.body.style.overflow = "";
       previousActiveElement.current?.focus();
     };
-  }, [onClose]);
+  }, [open]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" ref={overlayRef}>
