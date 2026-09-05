@@ -148,18 +148,18 @@ export default function ReportCardsPage() {
   }, [student, classStudents, marks, term]);
 
   const tabulation = useMemo(() => {
-    const subOf = (id: string) => subjects.find((x) => x.id === id);
+    const idOf = (name: string) => subjects.find((x) => x.name === name)?.id;
     const columns = subjects
       .map((s) => s.name)
       .filter((name) =>
         marks.some(
-          (m) => m.exam_term === term && subOf(m.subject_id)?.name === name && classStudents.some((s2) => s2.id === m.student_id)
+          (m) => m.exam_term === term && m.subject_id === idOf(name) && classStudents.some((s2) => s2.id === m.student_id)
         )
       );
     const rows = classStudents.map((st) => {
       let total = 0, max = 0, gpaSum = 0, n = 0, pass = true;
       const cells = columns.map((name) => {
-        const m = marks.find((x) => x.student_id === st.id && x.subject_id === subOf(name)?.id && x.exam_term === term);
+        const m = marks.find((x) => x.student_id === st.id && x.subject_id === idOf(name) && x.exam_term === term);
         if (!m) return null;
         const t = m.marks_obtained + (m.has_practical ? (m.practical_marks ?? 0) : 0);
         const mx = m.max_marks + (m.has_practical ? (m.max_practical_marks ?? 0) : 0);
