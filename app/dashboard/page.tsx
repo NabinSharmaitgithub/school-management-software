@@ -105,7 +105,7 @@ export default function DashboardPage() {
           <div className="h-64 flex items-end gap-2">
             {attTrend.length ? (
               attTrend.map((day, i) => (
-                <div key={day.date} className="flex-1 flex flex-col justify-end gap-1 text-center">
+                <div key={day.date} className="flex-1 h-full flex flex-col justify-end gap-1 text-center">
                   <div
                     className="w-full rounded-t-md transition-all min-h-[2px]"
                     title={`${day.label}: ${day.pct}%`}
