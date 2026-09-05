@@ -534,7 +534,7 @@ export default function HostelPage() {
                     Total Outstanding
                   </p>
                   <p className="text-2xl font-bold text-on-surface mt-1">
-                    ₹{totalOutstanding.toLocaleString("en-IN")}
+                    रु{totalOutstanding.toLocaleString("en-IN")}
                   </p>
                 </GlassCard>
                 <GlassCard className="p-4">
@@ -646,7 +646,7 @@ export default function HostelPage() {
                               {f.fee_plan}
                             </td>
                             <td className="py-3 pr-4 text-right font-semibold text-on-surface">
-                              ₹{total.toLocaleString("en-IN")}
+                              रु{total.toLocaleString("en-IN")}
                             </td>
                             <td className="py-3 pr-4">
                               {st === "paid" && <StatusPill tone="success">Paid</StatusPill>}
@@ -829,12 +829,12 @@ export default function HostelPage() {
                 ].map(([label, amount]) => (
                   <div key={label} className="flex justify-between text-sm text-on-surface/80">
                     <span>{label}</span>
-                    <span>₹{amount.toLocaleString("en-IN")}</span>
+                    <span>रु{amount.toLocaleString("en-IN")}</span>
                   </div>
                 ))}
                 <div className="flex justify-between pt-2 border-t border-on-surface/10 font-semibold text-on-surface">
                   <span>Total Due</span>
-                  <span>₹{c.total.toLocaleString("en-IN")}</span>
+                  <span>रु{c.total.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
@@ -932,7 +932,7 @@ export default function HostelPage() {
                 onChange={(e) => setFeeForm((f) => ({ ...f, due_date: e.target.value }))}
               />
             </Field>
-            <Field label="Room Rent (₹)">
+            <Field label="Room Rent (रु)">
               <Input
                 type="number"
                 min="0"
@@ -940,7 +940,7 @@ export default function HostelPage() {
                 onChange={(e) => setFeeForm((f) => ({ ...f, rent: e.target.value }))}
               />
             </Field>
-            <Field label="Mess Fee (₹)">
+            <Field label="Mess Fee (रु)">
               <Input
                 type="number"
                 min="0"
@@ -948,7 +948,7 @@ export default function HostelPage() {
                 onChange={(e) => setFeeForm((f) => ({ ...f, mess: e.target.value }))}
               />
             </Field>
-            <Field label="Laundry / Other (₹)">
+            <Field label="Laundry / Other (रु)">
               <Input
                 type="number"
                 min="0"

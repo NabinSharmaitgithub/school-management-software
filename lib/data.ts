@@ -205,7 +205,7 @@ export type Loan = {
   issued_date: string; // YYYY-MM-DD
   due_date: string; // YYYY-MM-DD
   returned_date?: string; // set when returned
-  fine?: number; // computed at return or when fine collected, ₹
+  fine?: number; // computed at return or when fine collected, रु
   fine_paid?: boolean;
 };
 
@@ -1031,7 +1031,7 @@ const SETTINGS_DEFAULTS: Omit<SchoolSettings, "id"> = {
   school_name: "Greenwood International School",
   school_address: "123 Education Boulevard, Knowledge City",
   timezone: "(GMT+05:30) India Standard Time",
-  currency: "INR (₹)",
+  currency: "NPR (रु)",
   primary_color: "#6366F1",
   fee_clearance_date: "",
   logo_url: "",
@@ -1271,7 +1271,7 @@ export async function issueBook(
   return ref.id;
 }
 
-/** Return a loan: set the return date and any overdue fine (₹). */
+/** Return a loan: set the return date and any overdue fine (रु). */
 export async function returnLoan(
   id: string,
   returnDate: string,

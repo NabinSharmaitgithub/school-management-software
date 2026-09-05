@@ -17,16 +17,7 @@ import {
 import type { SchoolSettings, FeeStructure, FeeItem, UserRecord, Student } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
-type Tab = "general" | "branding" | "fees";
-
-const PRESETS = [
-  { label: "Indigo", hex: "#6366F1" },
-  { label: "Violet", hex: "#8B5CF6" },
-  { label: "Sky", hex: "#0EA5E9" },
-  { label: "Emerald", hex: "#10B981" },
-  { label: "Amber", hex: "#F59E0B" },
-  { label: "Rose", hex: "#F43F5E" },
-];
+type Tab = "general" | "fees";
 
 const TIMEZONES = [
   "(GMT+05:30) India Standard Time",
@@ -36,7 +27,7 @@ const TIMEZONES = [
   "(GMT-08:00) Pacific Time",
 ];
 
-const CURRENCIES = ["INR (₹)", "USD ($)", "EUR (€)", "GBP (£)", "AUD ($)"];
+const CURRENCIES = ["NPR (रु)", "USD ($)", "EUR (€)", "GBP (£)", "AUD ($)"];
 
 const YEARS = ["2024 - 2025", "2023 - 2024"];
 
@@ -68,10 +59,8 @@ export default function SettingsPage() {
   const [savedAt, setSavedAt] = useState("");
 
   const [form, setForm] = useState({ school_name: "", school_address: "", timezone: TIMEZONES[0], currency: CURRENCIES[0], fee_clearance_date: "" });
-  const [primary, setPrimary] = useState("#6366F1");
   const [logoName, setLogoName] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [faviconName, setFaviconName] = useState("");
 
   const [year, setYear] = useState(YEARS[0]);
   const [structOpen, setStructOpen] = useState(false);
@@ -87,7 +76,6 @@ export default function SettingsPage() {
       const [s, fs, c, u, st] = await Promise.all([getSchoolSettings(), listFeeStructures(), listClasses(), listUsers(), listStudents()]);
       setSettings(s);
       setForm({ school_name: s.school_name, school_address: s.school_address, timezone: s.timezone, currency: s.currency, fee_clearance_date: s.fee_clearance_date ?? "" });
-      setPrimary(s.primary_color);
       setLogoName(s.logo_url ? "Logo uploaded" : "");
       setStructures(fs);
       setClasses(c.map((x) => ({ id: x.id, label: `${x.name} ${x.section}`.trim() })));
@@ -153,18 +141,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function onPickColor(hex: string) {
-    setPrimary(hex);
-    setError("");
-    try {
-      await updateSchoolSettings({ primary_color: hex });
-      setSettings((s) => (s ? { ...s, primary_color: hex } : s));
-      setSavedAt("Brand color updated.");
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }
-
   function openCreate() {
     setError("");
     setEditing(null);
@@ -223,16 +199,12 @@ export default function SettingsPage() {
       <header className="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Settings</h1>
-          <p className="text-sm text-on-surface/60">School profile, branding, and fee structure</p>
+          <p className="text-sm text-on-surface/60">School profile and fee structure</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <GlassButton variant="ghost" onClick={() => setTab("general")} className={tab === "general" ? "bg-primary/15 text-primary font-semibold" : ""}>
             <span className="material-symbols-outlined text-lg mr-1">settings</span>
             General
-          </GlassButton>
-          <GlassButton variant="ghost" onClick={() => setTab("branding")} className={tab === "branding" ? "bg-primary/15 text-primary font-semibold" : ""}>
-            <span className="material-symbols-outlined text-lg mr-1">palette</span>
-            Branding
           </GlassButton>
           <GlassButton variant="ghost" onClick={() => setTab("fees")} className={tab === "fees" ? "bg-primary/15 text-primary font-semibold" : ""}>
             <span className="material-symbols-outlined text-lg mr-1">payments</span>
@@ -268,23 +240,33 @@ export default function SettingsPage() {
                       <Input value={form.school_name} onChange={(e) => setForm((f) => ({ ...f, school_name: e.target.value }))} required />
                     </Field>
                     <div>
-                      <p className="text-xs font-medium text-on-surface/70 mb-2">School Logo</p>
-                      <label className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/70 bg-white/40 py-6 cursor-pointer hover:bg-white/60 transition text-center">
-                        <span className="material-symbols-outlined text-2xl text-on-surface/30">cloud_upload</span>
-                        <span className="text-xs text-on-surface/60">
-                          Click to upload or drag &amp; drop
-                        </span>
-                        <span className="text-[11px] text-on-surface/40">SVG, PNG, JPG or GIF (max. 800×400px)</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) setSavedAt(`Logo selected: ${f.name} (shown as placeholder)`);
-                          }}
-                        />
-                      </label>
+                      <p className="text-xs font-medium text-on-surface/70 mb-2">
+                        Primary Logo (Desktop) · Recommended: 400×120px
+                      </p>
+                      <div className="flex items-center gap-3">
+                        {settings?.logo_url ? (
+                          <img src={settings.logo_url} alt="School logo" className="h-12 rounded-lg border border-white/70 bg-white/60 object-contain p-1" />
+                        ) : (
+                          <div className="flex-1 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 text-center text-xs text-on-surface/40">No logo yet</div>
+                        )}
+                        {uploading ? (
+                          <GlassButton disabled>Uploading…</GlassButton>
+                        ) : (
+                          <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
+                            <span className="material-symbols-outlined text-lg">upload</span>
+                            {logoName || "Upload New"}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={onLogoFile}
+                            />
+                          </label>
+                        )}
+                        {logoName && !uploading && (
+                          <GlassButton variant="ghost" onClick={() => setLogoName("")}>delete</GlassButton>
+                        )}
+                      </div>
                     </div>
                     <Field label="School Address">
                       <Input value={form.school_address} onChange={(e) => setForm((f) => ({ ...f, school_address: e.target.value }))} />
@@ -323,100 +305,6 @@ export default function SettingsPage() {
                 </div>
               </GlassCard>
             </form>
-          )}
-
-          {/* ── BRANDING ───────────────────────────────────────── */}
-          {tab === "branding" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <GlassCard className="p-4 sm:p-6">
-                <h2 className="text-base font-semibold mb-1">Color Theme</h2>
-                <p className="text-xs text-on-surface/60 mb-5">
-                  Select the primary accent color for your portal.
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {PRESETS.map((p) => (
-                    <button
-                      key={p.hex}
-                      onClick={() => onPickColor(p.hex)}
-                      className={`rounded-xl border p-3 flex flex-col items-center gap-2 transition ${
-                        primary === p.hex ? "border-primary ring-2 ring-primary/30" : "border-white/70 hover:bg-white/50"
-                      }`}
-                    >
-                      <span
-                        className="w-9 h-9 rounded-full shadow-inner"
-                        style={{ backgroundColor: p.hex }}
-                      />
-                      <span className="text-xs text-on-surface/70">{p.label}</span>
-                      {primary === p.hex && (
-                        <span className="material-symbols-outlined text-lg text-primary">check</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </GlassCard>
-
-              <GlassCard className="p-4 sm:p-6 space-y-5">
-                <div>
-                  <h2 className="text-base font-semibold mb-1">Logos &amp; Imagery</h2>
-                  <p className="text-xs text-on-surface/60 mb-4">
-                    Upload high-resolution transparent PNGs for best results.
-                  </p>
-
-                  <div className="space-y-4">
-                    <div className="rounded-xl border border-white/70 bg-white/40 p-4">
-                      <p className="text-xs font-medium text-on-surface/70 mb-2">
-                        Primary Logo (Desktop) · Recommended: 400×120px
-                      </p>
-                      <div className="flex items-center gap-3">
-                        {settings?.logo_url ? (
-                          <img src={settings.logo_url} alt="School logo" className="h-12 rounded-lg border border-white/70 bg-white/60 object-contain p-1" />
-                        ) : (
-                          <div className="flex-1 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 text-center text-xs text-on-surface/40">No logo yet</div>
-                        )}
-                        {uploading ? (
-                          <GlassButton disabled>Uploading…</GlassButton>
-                        ) : (
-                          <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
-                            <span className="material-symbols-outlined text-lg">upload</span>
-                            {logoName || "Upload New"}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={onLogoFile}
-                            />
-                          </label>
-                        )}
-                        {logoName && !uploading && (
-                          <GlassButton variant="ghost" onClick={() => setLogoName("")}>delete</GlassButton>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-white/70 bg-white/40 p-4">
-                      <p className="text-xs font-medium text-on-surface/70 mb-2">
-                        Mobile Mark &amp; Favicon · Recommended: 128×128px (Square)
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
-                          <span className="material-symbols-outlined text-lg">upload</span>
-                          {faviconName || "Upload New"}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => setFaviconName(e.target.files?.[0]?.name ?? "Upload New")}
-                          />
-                        </label>
-                        {faviconName && (
-                          <GlassButton variant="ghost" onClick={() => setFaviconName("")}>delete</GlassButton>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
           )}
 
           {/* ── FEE STRUCTURE ─────────────────────────────────── */}
@@ -492,7 +380,7 @@ export default function SettingsPage() {
                               </span>
                             </span>
                             <span className="flex items-center gap-2">
-                              <span className="font-medium text-on-surface">₹{f.amount.toLocaleString("en-IN")}</span>
+                              <span className="font-medium text-on-surface">रु{f.amount.toLocaleString("en-IN")}</span>
                               <StatusPill tone="neutral">{f.frequency}</StatusPill>
                             </span>
                           </div>
@@ -501,7 +389,7 @@ export default function SettingsPage() {
 
                       <div className="mt-3 pt-3 border-t border-on-surface/10 flex items-center justify-between">
                         <span className="text-xs text-on-surface/50">Estimated Annual Total</span>
-                        <span className="font-bold text-on-surface">₹{total.toLocaleString("en-IN")}</span>
+                        <span className="font-bold text-on-surface">रु{total.toLocaleString("en-IN")}</span>
                       </div>
                     </div>
                   );

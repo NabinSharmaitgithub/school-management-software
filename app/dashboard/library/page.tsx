@@ -14,7 +14,7 @@ import {
 import type { Book, Loan } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
-const FINE_PER_DAY = 5; // ₹
+const FINE_PER_DAY = 5; // रु
 const GENRES = ["Fiction", "Non-Fiction", "Science", "Science Fiction", "History", "Fantasy"];
 
 function today() {
@@ -453,7 +453,7 @@ export default function LibraryPage() {
                     Total Outstanding Fines
                   </p>
                   <p className="text-2xl font-bold text-on-surface mt-1">
-                    ₹{totalOutstanding.toLocaleString("en-IN")}
+                    रु{totalOutstanding.toLocaleString("en-IN")}
                   </p>
                 </GlassCard>
                 <GlassCard className="p-4">
@@ -464,7 +464,7 @@ export default function LibraryPage() {
                     Collected
                   </p>
                   <p className="text-2xl font-bold text-on-surface mt-1">
-                    ₹{collectedThisMonth.toLocaleString("en-IN")}
+                    रु{collectedThisMonth.toLocaleString("en-IN")}
                   </p>
                 </GlassCard>
                 <GlassCard className="p-4">
@@ -481,7 +481,7 @@ export default function LibraryPage() {
               <GlassCard className="p-4 sm:p-6">
                 <h2 className="text-base font-semibold mb-1">Fine Management</h2>
                 <p className="text-xs text-on-surface/60 mb-1">
-                  Overview and collection of outstanding library dues (₹{FINE_PER_DAY}/day overdue).
+                  Overview and collection of outstanding library dues (रु{FINE_PER_DAY}/day overdue).
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -518,7 +518,7 @@ export default function LibraryPage() {
                               {days} Days
                             </td>
                             <td className="py-3 pr-4 text-right font-semibold text-error">
-                              ₹{fine.toLocaleString("en-IN")}
+                              रु{fine.toLocaleString("en-IN")}
                             </td>
                             <td className="py-3 pr-4">
                               {active ? (
@@ -704,7 +704,7 @@ export default function LibraryPage() {
               <p className="text-on-surface/70">
                 Calculated Fine:{" "}
                 <span className="font-semibold text-error">
-                  ₹{fineFor(selectedReturnLoan, today()).toLocaleString("en-IN")}
+                  रु{fineFor(selectedReturnLoan, today()).toLocaleString("en-IN")}
                 </span>
               </p>
             </div>
@@ -735,7 +735,7 @@ export default function LibraryPage() {
           return (
             <>
               <p className="text-sm text-on-surface/70 mb-6">
-                Mark the <span className="font-semibold text-on-surface">₹{amount}</span> overdue
+                Mark the <span className="font-semibold text-on-surface">रु{amount}</span> overdue
                 fine for <span className="font-medium text-on-surface">{bookName(loan?.book_id ?? "")}</span>{" "}
                 as collected. The book stays on loan until returned.
               </p>

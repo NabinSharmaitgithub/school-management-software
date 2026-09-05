@@ -8,7 +8,7 @@ import type { FeeInvoice } from "@/lib/data";
 import { auth } from "@/lib/firebase";
 import { GlassCard, GlassButton } from "@/components/ui";
 
-const CURR = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const CURR = (n: number) => `रु${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 function monthLabel(month: string) {
   const [y, m] = month.split("-");

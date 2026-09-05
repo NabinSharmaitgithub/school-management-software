@@ -28,7 +28,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const CURR = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const CURR = (n: number) => `रु${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 function monthLabel(month: string) {
   const [y, m] = month.split("-");
@@ -355,7 +355,7 @@ export default function FinancePage() {
                     <td className="py-3 pr-4 hidden md:table-cell text-on-surface/70">{p.method}</td>
                     <td className="py-3 pr-4 hidden lg:table-cell text-on-surface/70">{p.date}</td>
                     <td className="py-3 pr-4 text-right font-semibold text-success">
-                      ₹{p.amount.toLocaleString("en-IN")}
+                      रु{p.amount.toLocaleString("en-IN")}
                     </td>
                     <td className="py-3 text-right">
                       <button
@@ -540,7 +540,7 @@ export default function FinancePage() {
               <p>Period: {monthLabel(payInv.month)}</p>
               <p>Total {CURR(payInv.total)} · Paid {CURR(payInv.paid)} · <span className="font-semibold text-on-surface">Balance {CURR(payInv.payable - payInv.paid)}</span></p>
             </div>
-            <Field label="Amount (₹) *">
+            <Field label="Amount (रु) *">
               <Input type="number" min="1" inputMode="numeric" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} required />
             </Field>
             <div className="grid grid-cols-2 gap-4">
@@ -730,7 +730,7 @@ export default function FinancePage() {
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Amount (₹) *">
+            <Field label="Amount (रु) *">
               <Input
                 type="number"
                 min="1"

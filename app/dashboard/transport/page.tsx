@@ -497,7 +497,7 @@ export default function TransportPage() {
                   min={0}
                   value={feeInput}
                   onChange={(e) => setFeeInput(e.target.value)}
-                  placeholder="Fee ₹"
+                  placeholder="Fee रु"
                 />
               </div>
 
@@ -554,7 +554,7 @@ export default function TransportPage() {
                             {row.pickup_stop ?? "—"} → {row.drop_stop ?? "School Gate"}
                           </td>
                           <td className="py-3 pr-4 text-right text-on-surface/80">
-                            {row.monthly_fee ? `₹${row.monthly_fee.toLocaleString("en-IN")}` : "—"}
+                            {row.monthly_fee ? `रु${row.monthly_fee.toLocaleString("en-IN")}` : "—"}
                           </td>
                           <td className="py-3 pr-4">
                             {row.status === "assigned" && <StatusPill tone="success">Assigned</StatusPill>}
@@ -802,7 +802,7 @@ export default function TransportPage() {
               ))}
             </Select>
           </Field>
-          <Field label="Monthly Fee (₹)">
+          <Field label="Monthly Fee (रु)">
             <Input type="number" min={0} value={feeInput} onChange={(e) => setFeeInput(e.target.value)} />
           </Field>
           {error && (
@@ -902,7 +902,7 @@ export default function TransportPage() {
                           </span>
                         </span>
                       </span>
-                      <span className="text-on-surface/80">₹{s.cost.toLocaleString("en-IN")}</span>
+                      <span className="text-on-surface/80">रु{s.cost.toLocaleString("en-IN")}</span>
                     </div>
                   ))}
                 </div>
@@ -957,7 +957,7 @@ export default function TransportPage() {
             <Field label="Date">
               <Input type="date" value={serviceForm.date} onChange={(e) => setServiceForm((f) => ({ ...f, date: e.target.value }))} />
             </Field>
-            <Field label="Cost (₹)">
+            <Field label="Cost (रु)">
               <Input type="number" min="0" placeholder="e.g. 8000" value={serviceForm.cost} onChange={(e) => setServiceForm((f) => ({ ...f, cost: e.target.value }))} />
             </Field>
           </div>

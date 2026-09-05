@@ -11,7 +11,7 @@ import {
 import type { Staff, Payslip } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
-const CURR = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const CURR = (n: number) => `रु${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 function net(p: Payslip) {
   return p.basic + p.allowances - p.deductions;

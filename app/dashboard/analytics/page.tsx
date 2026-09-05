@@ -13,7 +13,7 @@ import {
 import type { Class, Student, Staff, Payment, AttendanceEntry, Mark, FeeStructure } from "@/lib/data";
 import { GlassCard, Select } from "@/components/ui";
 
-const CURR = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const CURR = (n: number) => `रु${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 function weekday(date: string) {
