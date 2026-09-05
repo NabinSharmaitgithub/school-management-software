@@ -44,6 +44,7 @@ export default function ReportCardsPage() {
   const [error, setError] = useState("");
 
   const [classId, setClassId] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [term, setTerm] = useState("");
   const [inclAttendance, setInclAttendance] = useState(true);
   const [inclRemarks, setInclRemarks] = useState(true);
@@ -96,7 +97,11 @@ export default function ReportCardsPage() {
     if (term === "" && terms.length) setTerm(terms[0]);
   }, [terms, term]);
 
-  const student = classStudents[0];
+  const student = classStudents.find((s) => s.id === studentId) ?? classStudents[0];
+
+  useEffect(() => {
+    if (classStudents[0]?.id !== studentId) setStudentId(classStudents[0]?.id ?? "");
+  }, [classId]);
 
   const rows = useMemo(() => {
     if (!student) return [];
@@ -141,6 +146,60 @@ export default function ReportCardsPage() {
     const myVal = idx >= 0 ? avgs[idx] : 0;
     return myVal ? avgs.filter((v) => v > myVal).length + 1 : classStudents.length || 1;
   }, [student, classStudents, marks, term]);
+
+  const tabulation = useMemo(() => {
+    const subOf = (id: string) => subjects.find((x) => x.id === id);
+    const columns = subjects
+      .map((s) => s.name)
+      .filter((name) =>
+        marks.some(
+          (m) => m.exam_term === term && subOf(m.subject_id)?.name === name && classStudents.some((s2) => s2.id === m.student_id)
+        )
+      );
+    const rows = classStudents.map((st) => {
+      let total = 0, max = 0, gpaSum = 0, n = 0, pass = true;
+      const cells = columns.map((name) => {
+        const m = marks.find((x) => x.student_id === st.id && x.subject_id === subOf(name)?.id && x.exam_term === term);
+        if (!m) return null;
+        const t = m.marks_obtained + (m.has_practical ? (m.practical_marks ?? 0) : 0);
+        const mx = m.max_marks + (m.has_practical ? (m.max_practical_marks ?? 0) : 0);
+        total += t; max += mx; n++;
+        const pct = mx ? (t / mx) * 100 : 0;
+        gpaSum += gpa(pct);
+        if (pct < 35) pass = false;
+        return t;
+      });
+      return { st, cells, total, max, pct: max ? (total / max) * 100 : 0, grade: max ? grade((total / max) * 100) : "F", gpa: n ? gpaSum / n : 0, pass };
+    });
+    return {
+      columns,
+      rows: rows.map((r) => ({ ...r, rank: r.pct ? rows.filter((x) => x.pct > r.pct).length + 1 : rows.length || 1 })),
+    };
+  }, [classStudents, subjects, marks, term]);
+
+  function exportCsv() {
+    const { columns, rows } = tabulation;
+    if (!rows.length) return;
+    const esc = (v: string | number | null) => {
+      const s = v === null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const head = ["Roll No.", "Student Name", ...columns, "Total Marks", "Percentage", "Grade", "GPA", "Rank", "Result"];
+    const lines = [head.map(esc).join(",")];
+    for (const r of rows)
+      lines.push(
+        [r.st.roll_number, r.st.name, ...r.cells.map((c) => esc(c)), r.total, `${r.pct.toFixed(2)}%`, r.grade, r.gpa.toFixed(2), r.rank, r.pass ? "PASS" : "FAIL"]
+          .map(esc)
+          .join(",")
+      );
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tabulation-${`${className}${section}`.trim().replace(/\s+/g, "_") || "class"}-${term.replace(/\s+/g, "_")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const className = classes.find((c) => c.id === classId)?.name ?? "";
   const section = classes.find((c) => c.id === classId)?.section ?? "";
@@ -193,10 +252,16 @@ export default function ReportCardsPage() {
           <h1 className="text-xl font-semibold">Report Card Studio</h1>
           <p className="text-sm text-on-surface/60">School profile, and generate class reports</p>
         </div>
-        <GlassButton onClick={onPrint} disabled={downloading}>
-          <span className="material-symbols-outlined text-lg">download</span>
-          {downloading ? "Generating…" : "Download PDF"}
-        </GlassButton>
+        <div className="flex flex-wrap items-center gap-2">
+          <GlassButton onClick={onPrint} disabled={downloading}>
+            <span className="material-symbols-outlined text-lg">download</span>
+            {downloading ? "Generating…" : "Download PDF"}
+          </GlassButton>
+          <GlassButton variant="ghost" onClick={exportCsv} disabled={!tabulation.rows.length}>
+            <span className="material-symbols-outlined text-lg">grid_on</span>
+            Export Class CSV
+          </GlassButton>
+        </div>
       </header>
 
       {error && (
@@ -228,6 +293,16 @@ export default function ReportCardsPage() {
                 </Select>
               </Field>
             </div>
+          <div>
+              <Field label="Student">
+                <Select value={student?.id ?? ""} onChange={(e) => setStudentId(e.target.value)}>
+                  {classStudents.length === 0 && <option>—</option>}
+                  {classStudents.map((s) => (
+                    <option key={s.id} value={s.id}>{s.roll_number ? `${s.roll_number} · ` : ""}{s.name}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
           </div>
 
           <div>
@@ -255,10 +330,6 @@ export default function ReportCardsPage() {
             <p className="text-xs text-on-surface/50 mb-2">
               Previewing: <span className="font-medium text-on-surface">{student?.name ?? "—"}</span> ({classStudents.length} students in class)
             </p>
-            <GlassButton className="w-full">
-              <span className="material-symbols-outlined text-lg">play_circle</span>
-              Generate for Class
-            </GlassButton>
           </div>
         </GlassCard>
 
