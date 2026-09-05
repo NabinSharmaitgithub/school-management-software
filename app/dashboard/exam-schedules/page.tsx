@@ -10,6 +10,7 @@ import {
   addExam,
   listExamSessions,
   addExamSession,
+  updateExamSession,
   deleteExamSession,
   getSchoolSettings,
 } from "@/lib/data";
@@ -64,6 +65,7 @@ export default function ExamSchedulesPage() {
 
   const [slotOpen, setSlotOpen] = useState(false);
   const [slot, setSlot] = useState({
+    id: "",
     subject_id: "",
     date: new Date().toISOString().slice(0, 10),
     start: "09:00",
@@ -145,21 +147,38 @@ export default function ExamSchedulesPage() {
       setError("Subject and class(es) are required.");
       return;
     }
+    const session = {
+      exam_id: examId,
+      subject_id: slot.subject_id,
+      class_ids: slot.class_ids,
+      date: slot.date,
+      start: slot.start,
+      end: slot.end,
+    };
     try {
-      await addExamSession({
-        exam_id: examId,
-        subject_id: slot.subject_id,
-        class_ids: slot.class_ids,
-        date: slot.date,
-        start: slot.start,
-        end: slot.end,
-      });
+      if (slot.id) await updateExamSession(slot.id, session);
+      else await addExamSession(session);
       setSlotOpen(false);
-      setSlot((s) => ({ ...s, class_ids: [] }));
+      setSlot((s) => ({ ...s, id: "", class_ids: [] }));
       load();
     } catch (err) {
       setError((err as Error).message);
     }
+  }
+
+  function openEdit(s: ExamSession) {
+    setSlot({
+      id: s.id,
+      subject_id: s.subject_id,
+      date: s.date,
+      start: s.start,
+      end: s.end,
+      class_ids: [...s.class_ids],
+    });
+    setError("");
+    setSlot({ id: "", subject_id: "", date: new Date().toISOString().slice(0, 10), start: "09:00", end: "12:00", class_ids: [] });
+    setError("");
+    setSlotOpen(true);
   }
 
   function toggleClass(id: string) {
@@ -373,7 +392,13 @@ export default function ExamSchedulesPage() {
           </div>
           {exams.length > 0 && (
             <div className="flex gap-2">
-              <GlassButton onClick={() => setSlotOpen(true)}>
+              <GlassButton
+                onClick={() => {
+                  setSlot({ id: "", subject_id: "", date: new Date().toISOString().slice(0, 10), start: "09:00", end: "12:00", class_ids: [] });
+                  setError("");
+                  setSlotOpen(true);
+                }}
+              >
                 <span className="material-symbols-outlined text-lg">add</span>
                 Add Session
               </GlassButton>
@@ -424,7 +449,14 @@ export default function ExamSchedulesPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-3 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => openEdit(s)}
+                          className="text-on-surface/40 hover:text-primary transition mr-3"
+                          aria-label="Edit session"
+                        >
+                          <span className="material-symbols-outlined">edit</span>
+                        </button>
                         <button
                           onClick={() => setConfirmDel(s.id)}
                           className="text-on-surface/40 hover:text-error transition"
@@ -469,7 +501,7 @@ export default function ExamSchedulesPage() {
       </Modal>
 
       {/* ── Add session modal ───────────────────────────────── */}
-      <Modal open={slotOpen} onClose={() => setSlotOpen(false)} title="Add Exam Session">
+      <Modal open={slotOpen} onClose={() => setSlotOpen(false)} title={slot.id ? "Edit Exam Session" : "Add Exam Session"}>
         <form className="space-y-4" onSubmit={onAddSlot}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Date *">
@@ -518,7 +550,7 @@ export default function ExamSchedulesPage() {
 
           <div className="flex justify-end gap-3 pt-2">
             <GlassButton type="button" variant="ghost" onClick={() => setSlotOpen(false)}>Cancel</GlassButton>
-            <GlassButton type="submit">Add Session</GlassButton>
+            <GlassButton type="submit">{slot.id ? "Save Changes" : "Add Session"}</GlassButton>
           </div>
         </form>
       </Modal>

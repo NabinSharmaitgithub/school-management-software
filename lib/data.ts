@@ -1152,6 +1152,10 @@ export async function addExamSession(data: Omit<ExamSession, "id">) {
   return ref.id;
 }
 
+export async function updateExamSession(id: string, data: Partial<ExamSession>) {
+  await updateDoc(doc(db!, "exam_sessions", id), data);
+}
+
 export async function deleteExamSession(id: string) {
   await deleteDoc(doc(db!, "exam_sessions", id));
 }
