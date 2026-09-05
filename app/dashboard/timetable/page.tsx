@@ -9,13 +9,14 @@ import {
   addTimetableEntry,
   updateTimetableEntry,
   deleteTimetableEntry,
+  getTimetableConfig,
+  saveTimetableConfig,
+  TIMETABLE_DEFAULTS,
 } from "@/lib/data";
-import type { Class, Subject, Staff, TimetableEntry } from "@/lib/data";
+import type { Class, Subject, Staff, TimetableEntry, TimetableConfig, TimetableSlot } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill } from "@/components/ui";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00"];
-const DURATION = "45 mins";
+const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type Tab = "class" | "staff";
 
@@ -24,6 +25,7 @@ export default function TimetablePage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [cfg, setCfg] = useState<TimetableConfig>(TIMETABLE_DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,19 +36,23 @@ export default function TimetablePage() {
   const [edit, setEdit] = useState<{ day: string; start: string; entry?: TimetableEntry } | null>(null);
   const [form, setForm] = useState({ subject_id: "", teacher: "", room: "", class_id: "" });
   const [confirmDel, setConfirmDel] = useState<TimetableEntry | null>(null);
+  const [cfgDraft, setCfgDraft] = useState<TimetableConfig | null>(null);
+  const [cfgError, setCfgError] = useState("");
 
   const load = async () => {
     try {
-      const [c, s, st, e] = await Promise.all([
+      const [c, s, st, e, cfgData] = await Promise.all([
         listClasses(),
         listSubjects(),
         listStaff(),
         listTimetable(),
+        getTimetableConfig(),
       ]);
       setClasses(c);
       setSubjects(s);
       setStaff(st);
       setEntries(e);
+      setCfg(cfgData);
       if (!classId && c.length) setClassId(c[0].id);
       if (!staffId && st.length) setStaffId(st[0].id);
       setError("");
@@ -113,13 +119,15 @@ export default function TimetablePage() {
       return;
     }
     try {
+      const slotEnd = cfg.slots.find((x) => x.kind === "period" && x.start === edit.start)?.end ?? edit.start;
+
       const payload = {
         class_id: form.class_id || classId,
         subject_id: form.subject_id,
         teacher: form.teacher,
         day: edit.day,
         start: edit.start,
-        end: endOf(edit.start),
+        end: slotEnd,
         room: form.room.trim() || undefined,
       };
       if (tab === "staff" && staffGrid[`${edit.day}|${edit.start}`]) {
@@ -138,6 +146,55 @@ export default function TimetablePage() {
     } catch (err) {
       setError((err as Error).message);
     }
+  }
+
+  const periods = cfg.slots.filter((s) => s.kind === "period");
+  const filledSlots = grid ? Object.values(grid).filter(Boolean).length : 0;
+
+  function openCfgEditor() {
+    setCfgError("");
+    setCfgDraft({ days: [...cfg.days], slots: cfg.slots.map((s) => ({ ...s })) });
+  }
+
+  function updSlot(i: number, patch: Partial<TimetableSlot>) {
+    setCfgDraft((d) => d && { ...d, slots: d.slots.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
+  }
+
+  function rmSlot(i: number) {
+    setCfgDraft((d) => d && { ...d, slots: d.slots.filter((_, j) => j !== i) });
+  }
+
+  function addSlot(kind: TimetableSlot["kind"]) {
+    setCfgDraft((d) => d && { ...d, slots: [...d.slots, { start: "12:00", end: "12:45", kind }] });
+  }
+
+  function toggleDay(day: string, on: boolean) {
+    setCfgDraft((d) => d && { ...d, days: on ? [...d.days, day] : d.days.filter((x) => x !== day) });
+  }
+
+  function saveCfg() {
+    if (!cfgDraft) return;
+    const bad = cfgDraft.slots.find((s) => !s.start || !s.end || s.start >= s.end);
+    if (bad) {
+      setCfgError("Each slot needs a valid start before its end time.");
+      return;
+    }
+    const dup = cfgDraft.slots.filter((s, i, arr) => arr.findIndex((x) => x.start === s.start) !== i);
+    if (dup.length) {
+      setCfgError(`Duplicate start time: ${dup[0].start}.`);
+      return;
+    }
+    if (!cfgDraft.days.length) {
+      setCfgError("Select at least one working day.");
+      return;
+    }
+    const saved = { days: cfgDraft.days, slots: cfgDraft.slots };
+    saveTimetableConfig(saved)
+      .then(() => {
+        setCfg(saved);
+        setCfgDraft(null);
+      })
+      .catch((err) => setCfgError((err as Error).message));
   }
 
   return (
@@ -197,9 +254,12 @@ export default function TimetablePage() {
               </Select>
             </Field>
           )}
-          <div className="ml-auto flex items-center gap-2 text-xs text-on-surface/50">
-            <StatusPill tone="neutral">{grid ? Object.values(grid).filter(Boolean).length : 0} / {TIME_SLOTS.length * DAYS.length} slots</StatusPill>
-            <span className="hidden sm:inline">{DURATION} periods</span>
+          <div className="ml-auto flex items-center gap-3 text-xs text-on-surface/50">
+            <GlassButton variant="ghost" onClick={openCfgEditor}>
+              <span className="material-symbols-outlined text-lg">schedule</span>
+              Edit Schedule
+            </GlassButton>
+            <StatusPill tone="neutral">{filledSlots} / {periods.length * cfg.days.length} slots</StatusPill>
           </div>
         </div>
 
@@ -211,24 +271,35 @@ export default function TimetablePage() {
               <thead>
                 <tr>
                   <th className="text-left text-xs text-on-surface/50 font-medium w-16">Time</th>
-                  {DAYS.map((d) => (
+                  {cfg.days.map((d) => (
                     <th key={d} className="text-center text-xs text-on-surface/50 font-medium">{d}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {TIME_SLOTS.map((slot) => (
-                  <tr key={slot}>
+                {cfg.slots.map((slot) =>
+                  slot.kind === "tiffin" ? (
+                    <tr key={`${slot.kind}-${slot.start}`}>
+                      <td
+                        colSpan={cfg.days.length + 1}
+                        className="rounded-lg bg-amber/10 border border-amber/20 px-3 py-2 text-xs text-amber"
+                      >
+                        <span className="material-symbols-outlined text-sm align-middle mr-1">lunch</span>
+                        Tiffin / Break · {slot.start}–{slot.end}
+                      </td>
+                    </tr>
+                  ) : (
+                  <tr key={slot.start}>
                     <td className="text-xs text-on-surface/60 font-medium whitespace-nowrap">
-                      {slot}
-                      <span className="block text-[9px] text-on-surface/40">{endOf(slot)}</span>
+                      {slot.start}
+                      <span className="block text-[9px] text-on-surface/40">{slot.end}</span>
                     </td>
-                    {DAYS.map((day) => {
-                      const entry = grid[`${day}|${slot}`];
+                    {cfg.days.map((day) => {
+                      const entry = grid[`${day}|${slot.start}`];
                       return (
                         <td key={day} className="p-0">
                           <button
-                            onClick={() => openCell(day, slot)}
+                            onClick={() => openCell(day, slot.start)}
                             className={`w-full min-h-16 rounded-lg border text-left px-2 py-1.5 transition hover:bg-white/40 ${
                               entry ? "bg-primary/10 border-primary/30" : "bg-on-surface/[0.03] border-on-surface/10"
                             }`}
@@ -247,7 +318,8 @@ export default function TimetablePage() {
                       );
                     })}
                   </tr>
-                ))}
+                  )
+                )}
               </tbody>
             </table>
           </div>
@@ -346,12 +418,80 @@ export default function TimetablePage() {
           </GlassButton>
         </div>
       </Modal>
+
+      {/* ── Schedule config ────────────────────────────────── */}
+      <Modal open={!!cfgDraft} onClose={() => setCfgDraft(null)} title="Edit Schedule">
+        {cfgDraft && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Working Days</h3>
+              <div className="flex flex-wrap gap-2">
+                {ALL_DAYS.map((d) => {
+                  const on = cfgDraft.days.includes(d);
+                  return (
+                    <label
+                      key={d}
+                      className={`px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition select-none ${
+                        on ? "bg-primary/10 border-primary/30 text-primary" : "border-on-surface/10 opacity-50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={on}
+                        onChange={(e) => toggleDay(d, e.target.checked)}
+                      />
+                      {d}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Slots</h3>
+              <div className="space-y-2">
+                {cfgDraft.slots.map((slot, i) => (
+                  <div key={`${slot.kind}-${i}`} className="flex flex-wrap gap-2 items-center">
+                    <Select
+                      className="!w-auto"
+                      value={slot.kind}
+                      onChange={(e) => updSlot(i, { kind: e.target.value as TimetableSlot["kind"] })}
+                    >
+                      <option value="period">Period</option>
+                      <option value="tiffin">Tiffin</option>
+                    </Select>
+                    <label className="text-xs text-on-surface/60 flex items-center gap-1">
+                      Start
+                      <Input type="time" className="!py-1.5 !px-2 !w-28" value={slot.start} onChange={(e) => updSlot(i, { start: e.target.value })} />
+                    </label>
+                    <label className="text-xs text-on-surface/60 flex items-center gap-1">
+                      End
+                      <Input type="time" className="!py-1.5 !px-2 !w-28" value={slot.end} onChange={(e) => updSlot(i, { end: e.target.value })} />
+                    </label>
+                    <GlassButton type="button" variant="ghost" onClick={() => rmSlot(i)}>
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </GlassButton>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-3">
+                <GlassButton type="button" variant="ghost" onClick={() => addSlot("period")}>+ Add Period</GlassButton>
+                <GlassButton type="button" variant="ghost" onClick={() => addSlot("tiffin")}>+ Add Tiffin</GlassButton>
+              </div>
+            </div>
+
+            {cfgError && (
+              <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{cfgError}</p>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <GlassButton variant="ghost" onClick={() => setCfgDraft(null)}>Cancel</GlassButton>
+              <GlassButton onClick={saveCfg}>Save Schedule</GlassButton>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
-}
-
-function endOf(start: string) {
-  const [h, m] = start.split(":").map(Number);
-  const total = h * 60 + m + 45;
-  return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }

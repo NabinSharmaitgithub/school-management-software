@@ -1220,6 +1220,44 @@ export async function deleteTimetableEntry(id: string) {
   await deleteDoc(doc(db!, "timetable", id));
 }
 
+/** Timetable layout config: working days + ordered slots (periods and tiffins). */
+export type TimetableSlot = {
+  start: string; // "HH:MM"
+  end: string; // "HH:MM"
+  kind: "period" | "tiffin";
+};
+
+export type TimetableConfig = {
+  days: string[]; // e.g. ["Mon","Tue","Wed","Thu","Fri","Sat"]
+  slots: TimetableSlot[];
+};
+
+export const TIMETABLE_DEFAULTS: TimetableConfig = {
+  days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  slots: [
+    { start: "08:00", end: "08:45", kind: "period" },
+    { start: "09:00", end: "09:45", kind: "period" },
+    { start: "10:00", end: "10:45", kind: "period" },
+    { start: "11:00", end: "11:30", kind: "tiffin" },
+    { start: "11:30", end: "12:15", kind: "period" },
+    { start: "13:00", end: "13:45", kind: "period" },
+  ],
+};
+
+export async function getTimetableConfig(): Promise<TimetableConfig> {
+  const snap = await getDoc(doc(db!, "settings", "timetable"));
+  if (!snap.exists()) return TIMETABLE_DEFAULTS;
+  const d = snap.data() as Partial<TimetableConfig>;
+  return {
+    days: Array.isArray(d.days) && d.days.length ? d.days : TIMETABLE_DEFAULTS.days,
+    slots: Array.isArray(d.slots) && d.slots.length ? d.slots : TIMETABLE_DEFAULTS.slots,
+  };
+}
+
+export async function saveTimetableConfig(cfg: TimetableConfig) {
+  await setDoc(doc(db!, "settings", "timetable"), cfg);
+}
+
 /** List all books in the catalog, ordered by title. */
 export async function listBooks(): Promise<Book[]> {
   const q = query(col.books(), orderBy("title"));
