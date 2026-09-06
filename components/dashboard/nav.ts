@@ -24,6 +24,7 @@ const ADMIN_ONLY = [
   "/dashboard/academics",
   "/dashboard/assignments",
   "/dashboard/finance",
+  "/dashboard/my-fees",
   "/dashboard/library",
   "/dashboard/transport",
   "/dashboard/hostel",
