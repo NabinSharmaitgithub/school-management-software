@@ -478,6 +478,26 @@ async function main() {
   // Patch email on already-seeded staff so the teacher login is linked.
   await updateDoc(token, "staff", "st_1", { email: TEACHER_EMAIL });
 
+  // Seed staff attendance for the teacher over this month's weekdays up to today.
+  // A couple of deterministic absences so the "My Attendance" card shows X/Y, not X/X.
+  const now = new Date();
+  const [y, m] = [now.getFullYear(), now.getMonth()];
+  let workday = 0;
+  let staffAttendanceCount = 0;
+  for (let day = 1; ; day++) {
+    const d = new Date(y, m, day);
+    if (d.getMonth() !== m || d > now) break;
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6) continue; // weekends off
+    workday += 1;
+    const date = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const status = workday === 2 || workday === 11 ? "absent" : "present";
+    await writeDoc(token, "staff_attendance", `st_1_${date}`, {
+      staff_id: "st_1", date, status,
+    });
+    staffAttendanceCount += 1;
+  }
+
   const currentMonth = new Date().toISOString().slice(0, 7);
   const prevMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
   const payslips = [
@@ -540,7 +560,7 @@ async function main() {
   console.log("Hostel:", rooms.length, "rooms,", hostelFees.length, "fee records.");
   console.log("Transport:", vehicles.length, "vehicles,", routes.length, "routes,", assignments.length, "assignments.");
   console.log("Settings:", structures.length, "fee structures.");
-  console.log("Staff/HR:", staffList.length, "staff,", payslips.length, "payslips.");
+  console.log("Staff/HR:", staffList.length, "staff,", payslips.length, "payslips,", staffAttendanceCount, "attendance records.");
   console.log("Academics:", 1, "exam,", sessions.length, "sessions,", timetable.length, "timetable entries.");
 }
 

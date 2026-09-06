@@ -1,38 +1,59 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listStudents, listClasses, listPayments, attendanceSince, listAnnouncements } from "@/lib/data";
+import {
+  listStudents,
+  listClasses,
+  listPayments,
+  attendanceSince,
+  listAnnouncements,
+  listStaff,
+  staffAttendanceFor,
+  getUserByEmail,
+} from "@/lib/data";
 import type { AttendanceEntry, Announcement } from "@/lib/data";
+import { useTeacherScope } from "@/components/dashboard/teacher-scope";
+
+type DashStats = {
+  students: number;
+  classes: number;
+  classNames?: string;
+  feesMonth?: number;
+  myAtt?: { present: number; total: number } | null;
+  attToday: number | null; // percent, null when no record yet
+};
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<{
-    students: number;
-    classes: number;
-    feesMonth: number;
-    attToday: number | null; // percent, null when no record yet
-  } | null>(null);
+  const scope = useTeacherScope();
+  const [role, setRole] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashStats | null>(null);
   const [attTrend, setAttTrend] = useState<{ date: string; label: string; pct: number }[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
+    if (!scope.email) return;
+    let cancelled = false;
+    getUserByEmail(scope.email)
+      .then((u) => {
+        if (!cancelled) setRole(u?.role ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setRole(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scope.email]);
+
+  useEffect(() => {
+    if (!scope.ready || role === null) return;
     let cancelled = false;
     (async () => {
       const today = new Date();
       const todayStr = today.toISOString().slice(0, 10);
       const since = new Date(today.getTime() - 6 * 86400000).toISOString().slice(0, 10);
 
-      const [students, classes, payments, att, anns] = await Promise.all([
-        listStudents(),
-        listClasses(),
-        listPayments(),
-        attendanceSince(since),
-        listAnnouncements(),
-      ]);
-
-      const monthStr = todayStr.slice(0, 7);
-      const feesMonth = payments
-        .filter((p) => p.date.startsWith(monthStr))
-        .reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      const [att, anns] = await Promise.all([attendanceSince(since), listAnnouncements()]);
 
       const byDate = new Map<string, AttendanceEntry[]>();
       for (const a of att) {
@@ -57,8 +78,53 @@ export default function DashboardPage() {
         ? Math.round((attToday.filter((a) => a.status !== "absent").length / attToday.length) * 100)
         : null;
 
+      let dash: DashStats;
+      if (role === "Teacher") {
+        const [students, classes, staff] = await Promise.all([
+          listStudents(),
+          listClasses(),
+          listStaff(),
+        ]);
+        const mineSet = new Set([...scope.classIds, ...Object.keys(scope.subjectByClass)]);
+        const mineClasses = classes
+          .filter((c) => mineSet.has(c.id))
+          .sort((a, b) => `${a.name} ${a.section}`.localeCompare(`${b.name} ${b.section}`));
+        const teacher = staff.find((s) => s.email === scope.email);
+        const recs = teacher
+          ? await staffAttendanceFor(teacher.id, todayStr.slice(0, 7))
+          : [];
+        dash = {
+          students: students.filter((s) => mineSet.has(s.class_id)).length,
+          classes: mineClasses.length,
+          classNames: mineClasses.length
+            ? mineClasses.map((c) => `${c.name} ${c.section}`.trim()).join(", ")
+            : undefined,
+          myAtt: recs.length
+            ? {
+                present: recs.filter((r) => r.status !== "absent").length,
+                total: recs.length,
+              }
+            : null,
+          attToday: attTodayPct,
+        };
+      } else {
+        const [students, classes, payments] = await Promise.all([
+          listStudents(),
+          listClasses(),
+          listPayments(),
+        ]);
+        dash = {
+          students: students.length,
+          classes: classes.length,
+          feesMonth: payments
+            .filter((p) => p.date.startsWith(todayStr.slice(0, 7)))
+            .reduce((s, p) => s + (Number(p.amount) || 0), 0),
+          attToday: attTodayPct,
+        };
+      }
+
       if (!cancelled) {
-        setStats({ students: students.length, classes: classes.length, feesMonth, attToday: attTodayPct });
+        setStats(dash);
         setAttTrend(trend);
         setAnnouncements(anns.filter((a) => !a.draft).slice(0, 3));
       }
@@ -66,7 +132,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [scope, role]);
 
   const fmtINR = (n: number) => {
     if (n >= 100000) return `रु${(n / 100000).toFixed(1)}L`;
@@ -98,8 +164,32 @@ export default function DashboardPage() {
           label="Attendance Today"
           value={stats ? (stats.attToday === null ? "–" : `${stats.attToday}%`) : "–"}
         />
-        <StatCard icon="payments" label="Fees Collected (Month)" value={stats ? fmtINR(stats.feesMonth) : "–"} />
-        <StatCard icon="school" label="Classes" value={stats ? String(stats.classes) : "–"} />
+        {role === "Teacher" ? (
+          <>
+            <StatCard
+              icon="event_note"
+              label="My Attendance (Month)"
+              value={
+                stats
+                  ? stats.myAtt
+                    ? `${stats.myAtt.present}/${stats.myAtt.total} days present`
+                    : "–"
+                  : "–"
+              }
+            />
+            <StatCard
+              icon="school"
+              label="Classes"
+              value={stats ? String(stats.classes) : "–"}
+              sub={stats?.classNames}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard icon="payments" label="Fees Collected (Month)" value={stats ? fmtINR(stats.feesMonth ?? 0) : "–"} />
+            <StatCard icon="school" label="Classes" value={stats ? String(stats.classes) : "–"} />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -141,7 +231,17 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  sub?: string;
+}) {
   return (
     <div className="glass-panel p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -150,6 +250,11 @@ function StatCard({ icon, label, value }: { icon: string; label: string; value: 
       <div>
         <p className="text-2xl font-semibold text-on-surface">{value}</p>
         <p className="text-sm text-on-surface/60">{label}</p>
+        {sub ? (
+          <p className="text-xs text-on-surface/40 truncate" title={sub}>
+            {sub}
+          </p>
+        ) : null}
       </div>
     </div>
   );

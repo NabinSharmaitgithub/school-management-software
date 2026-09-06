@@ -86,6 +86,13 @@ export type AttendanceEntry = {
   status: "present" | "absent" | "late";
 };
 
+export type StaffAttendance = {
+  id: string;
+  staff_id: string;
+  date: string; // YYYY-MM-DD
+  status: "present" | "absent" | "late";
+};
+
 export type Payment = {
   id: string;
   student_id: string;
@@ -396,6 +403,7 @@ const col = {
   late_fees: () => collection(db!, "late_fees"),
   users: () => collection(db!, "users"),
   staff: () => collection(db!, "staff"),
+  staff_attendance: () => collection(db!, "staff_attendance"),
   leaves: () => collection(db!, "leave_requests"),
   notifications: () => collection(db!, "notifications"),
   assignments: () => collection(db!, "assignments"),
@@ -772,6 +780,19 @@ export async function listStaff(): Promise<Staff[]> {
   const q = query(col.staff(), orderBy("name"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ ...(d.data() as Staff), id: d.id }));
+}
+
+/** Staff attendance for a given staff member in a given month ("YYYY-MM"). */
+export async function staffAttendanceFor(
+  staffId: string,
+  month: string
+): Promise<StaffAttendance[]> {
+  const q = query(col.staff_attendance(), where("staff_id", "==", staffId));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map((d) => ({ ...(d.data() as StaffAttendance), id: d.id }))
+    .filter((a) => a.date.startsWith(month))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getStaff(id: string): Promise<Staff | null> {
