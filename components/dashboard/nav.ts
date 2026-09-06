@@ -21,6 +21,7 @@ export const NAV_ITEMS = [
 ];
 
 const ADMIN_ONLY = [
+  "/dashboard/academics",
   "/dashboard/assignments",
   "/dashboard/finance",
   "/dashboard/library",
