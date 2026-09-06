@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { isRestrictedFor, navItemsFor, NAV_ITEMS } from "@/components/dashboard/nav";
+import { isRestrictedFor, navItemsFor, NAV_ITEMS, type NavRole } from "@/components/dashboard/nav";
+import { getUserByEmail } from "@/lib/data";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -13,23 +14,29 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [role, setRole] = useState<NavRole>("Admin");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth!, (user) => {
       if (!user) router.replace("/");
       setEmail(user?.email ?? null);
+      if (user?.email) {
+        getUserByEmail(user.email)
+          .then((u) => setRole((u?.role as NavRole) ?? "Admin"))
+          .catch(() => setRole("Admin"));
+      }
       setReady(true);
     });
     return () => unsub();
   }, [router]);
 
   useEffect(() => {
-    if (email && isRestrictedFor(email, pathname)) router.replace("/dashboard");
-  }, [email, pathname, router]);
+    if (email && isRestrictedFor(role, pathname)) router.replace("/dashboard");
+  }, [role, email, pathname, router]);
 
   if (!ready) return null;
 
-  const items = navItemsFor(email);
+  const items = navItemsFor(role);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -58,7 +65,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <p className="font-semibold text-on-surface leading-tight">Academix</p>
-            <p className="text-xs text-on-surface/50">Admin Portal</p>
+            <p className="text-xs text-on-surface/50">{role === "Student" ? "Student Portal" : role === "Teacher" ? "Teacher Portal" : role === "Parent" ? "Parent Portal" : "Admin Portal"}</p>
           </div>
         </div>
         <nav className="space-y-1 flex-1 overflow-y-auto">

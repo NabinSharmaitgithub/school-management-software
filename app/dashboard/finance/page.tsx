@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -450,14 +451,20 @@ export default function FinancePage() {
                           <span className={STATUS_STYLE[b.status] ?? "text-on-surface/50"}>{b.status}</span>
                         </td>
                         <td className="py-3 text-right">
-                          <GlassButton
-                            variant="ghost"
-                            disabled={b.status === "PAID"}
-                            onClick={() => { setPayInv(b); setPayAmount(String(b.payable - b.paid > 0 ? b.payable - b.paid : "")); setPayDate(today()); setPayError(""); }}
-                          >
-                            <span className="material-symbols-outlined text-lg">payments</span>
-                            Collect
-                          </GlassButton>
+                          <div className="flex items-center justify-end gap-1">
+                            <Link href={`/dashboard/invoices/${b.id}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline mr-2">
+                              <span className="material-symbols-outlined text-lg">receipt_long</span>
+                              View
+                            </Link>
+                            <GlassButton
+                              variant="ghost"
+                              disabled={b.status === "PAID"}
+                              onClick={() => { setPayInv(b); setPayAmount(String(b.payable - b.paid > 0 ? b.payable - b.paid : "")); setPayDate(today()); setPayError(""); }}
+                            >
+                              <span className="material-symbols-outlined text-lg">payments</span>
+                              Collect
+                            </GlassButton>
+                          </div>
                         </td>
                       </tr>
                     ))}

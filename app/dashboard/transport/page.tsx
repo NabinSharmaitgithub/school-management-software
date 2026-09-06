@@ -11,6 +11,7 @@ import {
   deleteAssignment,
   listVehicles,
   addVehicle,
+  deleteVehicle,
   logService,
   listStudents,
   listClasses,
@@ -174,6 +175,14 @@ export default function TransportPage() {
     if (!stopsFor) return;
     await deleteRoute(stopsFor);
     setStopsFor("");
+    load();
+  }
+
+  async function onDeleteVehicle() {
+    if (!confirmDel) return;
+    await deleteVehicle(confirmDel);
+    setConfirmDel("");
+    setVehicleOpen("");
     load();
   }
 
@@ -910,9 +919,28 @@ export default function TransportPage() {
             </div>
           </div>
         )}
+        <div className="flex justify-end gap-3 pt-4 border-t border-on-surface/10">
+          <GlassButton variant="danger" onClick={() => { setConfirmDel(vehicleOpen); setError(""); }}>
+            <span className="material-symbols-outlined text-lg">delete</span>
+            Remove Vehicle
+          </GlassButton>
+          <GlassButton variant="ghost" onClick={() => setVehicleOpen("")}>Close</GlassButton>
+        </div>
       </Modal>
 
-      {/* ── Add vehicle modal ────────────────────────────────── */}
+      {/* ── Remove vehicle confirm modal ─────────────────────── */}
+      <Modal open={!!confirmDel} onClose={() => setConfirmDel("")} title="Remove Vehicle">
+        <p className="text-sm text-on-surface/70 mb-6">
+          Remove {vehicleOf(confirmDel)?.vehicle_no} ({vehicleOf(confirmDel)?.plate}) from the fleet? This cannot be undone.
+        </p>
+        {error && (
+          <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2 mb-4">{error}</p>
+        )}
+        <div className="flex justify-end gap-3">
+          <GlassButton variant="ghost" onClick={() => setConfirmDel("")}>Cancel</GlassButton>
+          <GlassButton variant="danger" onClick={onDeleteVehicle}>Remove</GlassButton>
+        </div>
+      </Modal>
       <Modal open={addVehicleOpen} onClose={() => setAddVehicleOpen(false)} title="Add Vehicle">
         <form className="space-y-4" onSubmit={onAddVehicle}>
           <div className="grid grid-cols-2 gap-4">

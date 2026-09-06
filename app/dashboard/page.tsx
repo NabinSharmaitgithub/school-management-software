@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listStudents, listClasses, listPayments, attendanceSince } from "@/lib/data";
-import type { AttendanceEntry } from "@/lib/data";
+import { listStudents, listClasses, listPayments, attendanceSince, listAnnouncements } from "@/lib/data";
+import type { AttendanceEntry, Announcement } from "@/lib/data";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<{
@@ -12,6 +12,7 @@ export default function DashboardPage() {
     attToday: number | null; // percent, null when no record yet
   } | null>(null);
   const [attTrend, setAttTrend] = useState<{ date: string; label: string; pct: number }[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,11 +21,12 @@ export default function DashboardPage() {
       const todayStr = today.toISOString().slice(0, 10);
       const since = new Date(today.getTime() - 6 * 86400000).toISOString().slice(0, 10);
 
-      const [students, classes, payments, att] = await Promise.all([
+      const [students, classes, payments, att, anns] = await Promise.all([
         listStudents(),
         listClasses(),
         listPayments(),
         attendanceSince(since),
+        listAnnouncements(),
       ]);
 
       const monthStr = todayStr.slice(0, 7);
@@ -58,6 +60,7 @@ export default function DashboardPage() {
       if (!cancelled) {
         setStats({ students: students.length, classes: classes.length, feesMonth, attToday: attTodayPct });
         setAttTrend(trend);
+        setAnnouncements(anns.filter((a) => !a.draft).slice(0, 3));
       }
     })();
     return () => {
@@ -125,9 +128,13 @@ export default function DashboardPage() {
         </div>
         <div className="glass-panel p-6 space-y-4">
           <h2 className="font-semibold">Recent Announcements</h2>
-          <Announcement title="Term exams begin Monday" time="2h ago" />
-          <Announcement title="Staff meeting Fri 3 PM" time="1d ago" />
-          <Announcement title="Sports day registration open" time="2d ago" />
+          {announcements.length === 0 ? (
+            <p className="text-sm text-on-surface/60">No announcements yet.</p>
+          ) : (
+            announcements.map((a) => (
+              <Announcement key={a.id} title={a.title} time={`${timeAgo(a.date)} · ${a.author}`} />
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -160,4 +167,11 @@ function Announcement({ title, time }: { title: string; time: string }) {
       </div>
     </div>
   );
+}
+
+function timeAgo(date: string): string {
+  const days = Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "1 day ago";
+  return `${days} days ago`;
 }
