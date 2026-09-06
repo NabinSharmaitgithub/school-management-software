@@ -69,11 +69,19 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div className="absolute top-0 right-0 w-36 h-9 bg-[#231f20]" />
 
             <div className="flex items-center mt-6 pb-6 border-b-2 border-[#d1d1d1]">
-              <div className="w-[90px] h-[90px] rounded-full shrink-0 mr-6 flex flex-col items-center justify-center"
-                style={{ background: "linear-gradient(180deg,#d3eaf7 65%,#88a31e 65%)" }}>
-                <span className="text-2xl font-black leading-none tracking-tight">{initials(school.school_name)}</span>
-                <span className="text-[8px] font-bold tracking-widest mt-0.5">1919</span>
-              </div>
+              {school.logo_url ? (
+                <img
+                  src={school.logo_url}
+                  alt={`${school.school_name} logo`}
+                  className="w-[90px] h-[90px] rounded-full shrink-0 mr-6 object-cover border border-black/10"
+                />
+              ) : (
+                <div className="w-[90px] h-[90px] rounded-full shrink-0 mr-6 flex flex-col items-center justify-center"
+                  style={{ background: "linear-gradient(180deg,#d3eaf7 65%,#88a31e 65%)" }}>
+                  <span className="text-2xl font-black leading-none tracking-tight">{initials(school.school_name)}</span>
+                  <span className="text-[8px] font-bold tracking-widest mt-0.5">1919</span>
+                </div>
+              )}
               <div>
                 <h1 className="text-3xl sm:text-4xl font-black tracking-widest uppercase">{school.school_name}</h1>
                 <p className="text-sm font-semibold text-[#333]">{school.school_address}</p>
