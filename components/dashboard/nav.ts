@@ -1,6 +1,7 @@
 export const NAV_ITEMS = [
   { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
   { label: "My Class", icon: "groups", href: "/dashboard/my-class" },
+  { label: "My Attendance", icon: "event_available", href: "/dashboard/my-attendance" },
   { label: "Students", icon: "group", href: "/dashboard/students" },
   { label: "Academics", icon: "menu_book", href: "/dashboard/academics" },
   { label: "Attendance", icon: "event_available", href: "/dashboard/attendance" },
@@ -35,7 +36,7 @@ const ADMIN_ONLY = [
   "/dashboard/settings",
 ];
 
-const TEACHER_ONLY = ["/dashboard/my-class"];
+const TEACHER_ONLY = ["/dashboard/my-class", "/dashboard/my-attendance"];
 const STUDENT_ONLY = ["/dashboard/my-fees"];
 export type NavRole = "Admin" | "Teacher" | "Student" | "Parent" | null;
 
