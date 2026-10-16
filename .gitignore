@@ -13,3 +13,6 @@ screens/
 STITCH_PROMPTS.md
 STITCH_STATUS.md
 stitch-prompts-school-management.mdresults.html
+test-results/
+playwright-report/
+tests/e2e/helpers/*-state.json

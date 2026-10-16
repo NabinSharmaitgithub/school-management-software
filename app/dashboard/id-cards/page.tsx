@@ -27,7 +27,10 @@ export default function IdCardsPage() {
         setClasses(c);
         setStudents(s);
         setSettings(set);
-        setStudentId(s[0]?.id ?? "");
+        // Documents hub passes the preselected student via ?id=
+        const qs = new URLSearchParams(window.location.search).get("id");
+        const preselected = qs ? s.find((x) => x.id === qs) : undefined;
+        setStudentId(preselected?.id ?? s[0]?.id ?? "");
       } catch (e) {
         setError((e as Error).message);
       } finally {

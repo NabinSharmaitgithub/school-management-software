@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getStudent, listClasses, getSchoolSettings } from "@/lib/data";
 import type { Student, Class, SchoolSettings } from "@/lib/data";
@@ -27,7 +27,6 @@ function formatDate(iso: string) {
 }
 
 export default function CharacterCertificatePage() {
-  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [student, setStudent] = useState<Student | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -37,10 +36,13 @@ export default function CharacterCertificatePage() {
 
   useEffect(() => {
     let cancelled = false;
+    // Student id comes from the Documents hub via ?id=
+    const id = new URLSearchParams(window.location.search).get("id") ?? "";
     (async () => {
       try {
+        if (!id) throw new Error("No student selected. Pick a student from the Documents page.");
         const [s, c, set] = await Promise.all([
-          getStudent(id!),
+          getStudent(id),
           listClasses(),
           getSchoolSettings(),
         ]);
@@ -58,7 +60,7 @@ export default function CharacterCertificatePage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, []);
 
   const classOf = classes.find((c) => c.id === student?.class_id);
   const className = classOf ? `${classOf.name} ${classOf.section}` : "";

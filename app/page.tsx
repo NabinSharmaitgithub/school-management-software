@@ -5,35 +5,15 @@ import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { ensureUser } from "@/lib/data";
-import { GlassButton, Button, Input, Field, Alert } from "@/components/ui";
+import { GlassButton, Input, Field, Alert } from "@/components/ui";
 
 const ROLES = ["Admin", "Teacher", "Student", "Parent"] as const;
 
-function GoogleIcon() {
-  return (
-    <svg className="w-5 h-5" viewBox="0 0 48 48" aria-hidden>
-      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.2-.1-2.3-.4-3.5z"/>
-      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
-      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C37.1 40.6 44 35 44 24c0-1.2-.1-2.3-.4-3.5z"/>
-    </svg>
-  );
-}
-
-function MicrosoftIcon() {
-  return (
-    <svg className="w-5 h-5" viewBox="0 0 23 23" aria-hidden>
-      <path fill="#F35325" d="M1 1h10v10H1z"/>
-      <path fill="#81BC06" d="M12 1h10v10H12z"/>
-      <path fill="#05A6F0" d="M1 12h10v10H1z"/>
-      <path fill="#FFBA08" d="M12 12h10v10H12z"/>
-    </svg>
-  );
-}
-
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState<(typeof ROLES)[number]>("Admin");
+  // Role chip only matters for first-time sign-ins (writes users/{email});
+  // default to Student so nobody self-promotes to Admin by default.
+  const [role, setRole] = useState<(typeof ROLES)[number]>("Student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -180,8 +160,8 @@ export default function LoginPage() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="peer sr-only"
                 />
-                <span className="w-4 h-4 rounded border border-on-surface/30 bg-white/50 peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+                <span className="w-4 h-4 rounded border border-on-surface/30 bg-white/50 peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center pointer-events-none">
+                  <span className="material-symbols-outlined text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">check</span>
                 </span>
                 <span className="text-xs text-on-surface/70">Remember me</span>
               </label>
@@ -201,26 +181,10 @@ export default function LoginPage() {
               {!loading && <span className="material-symbols-outlined text-xl">arrow_forward</span>}
             </GlassButton>
           </form>
-
-          <div className="relative my-8 flex items-center">
-            <div className="flex-grow border-t border-on-surface/10" />
-            <span className="flex-shrink-0 mx-4 text-xs text-on-surface/50">or continue with</span>
-            <div className="flex-grow border-t border-on-surface/10" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="ghost" className="w-full">
-              <GoogleIcon /> Google
-            </Button>
-            <Button variant="ghost" className="w-full">
-              <MicrosoftIcon /> Microsoft
-            </Button>
-          </div>
         </div>
 
         <p className="text-center mt-6 text-xs text-on-surface/50">
-          Academix High © 2026 •{" "}
-          <a href="#" className="text-primary/80 hover:text-primary transition-colors underline-offset-2 hover:underline">Support</a>
+          Academix High © 2026
         </p>
       </div>
     </main>

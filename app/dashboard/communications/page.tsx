@@ -690,7 +690,13 @@ export default function CommunicationsPage() {
                       onSubmit={onSendMessage}
                       className="px-4 py-3 border-t border-white/50 flex items-center gap-2"
                     >
-                      <button type="button" className="text-on-surface/40" aria-label="Attach">
+                      <button
+                        type="button"
+                        disabled
+                        title="Attachments coming soon"
+                        className="text-on-surface/30 cursor-not-allowed"
+                        aria-label="Attach (coming soon)"
+                      >
                         <span className="material-symbols-outlined">attach_file</span>
                       </button>
                       <Input

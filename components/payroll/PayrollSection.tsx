@@ -1,18 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  listStaff,
-  getPayslips,
-  generatePayroll,
-  updatePayslipStatus,
-  updatePayslipAmounts,
-} from "@/lib/data";
-import type { Staff, Payslip } from "@/lib/data";
+import { listStaff, getPayslips, generatePayroll, updatePayslipStatus, updatePayslipAmounts, getSchoolSettings } from "@/lib/data";
+import type { Staff, Payslip, SchoolSettings } from "@/lib/data";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
 import { Field, GlassButton, GlassCard, Input, Modal, Select, StatusPill, Alert } from "@/components/ui";
 
-const CURR = (n: number) => `रु${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+function currencySymbol(currency?: string) {
+  return currency?.match(/\((.+)\)/)?.[1] ?? "रु";
+}
 
 function net(p: Payslip) {
   return p.basic + p.allowances - p.deductions;
@@ -39,6 +35,11 @@ export default function PayrollSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [settings, setSettings] = useState<SchoolSettings | null>(null);
+  const symbol = currencySymbol(settings?.currency);
+  const CURR = (n: number) =>
+    `${symbol}${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
   const [month, setMonth] = useState(MONTHS[0]);
   const [dept, setDept] = useState("All");
   const [running, setRunning] = useState(false);
@@ -51,9 +52,10 @@ export default function PayrollSection() {
 
   const load = async () => {
     try {
-      const [st, ps] = await Promise.all([listStaff(), getPayslips()]);
+      const [st, ps, set] = await Promise.all([listStaff(), getPayslips(), getSchoolSettings()]);
       setStaff(st);
       setPayslips(ps);
+      setSettings(set);
       setError("");
     } catch (e) {
       setError((e as Error).message);
@@ -281,7 +283,7 @@ export default function PayrollSection() {
             <div className="rounded-xl border border-white/70 bg-white p-4">
               <div className="flex items-center justify-between border-b border-on-surface/10 pb-3 mb-3">
                 <div>
-                  <p className="font-bold text-primary">Greenwood International School</p>
+                  <p className="font-bold text-primary">{settings?.school_name || "Academix High"}</p>
                   <p className="text-xs text-on-surface/50">Salary Statement · {monthLabel(preview.month)}</p>
                 </div>
                 <StatusPill tone={preview.status === "paid" ? "success" : "neutral"}>{preview.status}</StatusPill>

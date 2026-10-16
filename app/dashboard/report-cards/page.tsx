@@ -63,7 +63,15 @@ export default function ReportCardsPage() {
         setAttendance(a);
         setExams(e);
         setSettings(set);
-        setClassId(c[0]?.id ?? "");
+        // Documents hub passes the preselected student via ?id=
+        const qs = new URLSearchParams(window.location.search).get("id");
+        const preselected = qs ? st.find((s) => s.id === qs) : undefined;
+        if (preselected) {
+          setClassId(preselected.class_id);
+          setStudentId(preselected.id);
+        } else {
+          setClassId(c[0]?.id ?? "");
+        }
       } catch (e) {
         setError((e as Error).message);
       } finally {

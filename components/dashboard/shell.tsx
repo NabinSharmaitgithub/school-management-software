@@ -20,14 +20,24 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth!, (user) => {
-      if (!user) router.replace("/");
-      setEmail(user?.email ?? null);
-      if (user?.email) {
-        getUserByEmail(user.email)
-          .then((u) => setRole((u?.role as NavRole) ?? "Admin"))
-          .catch(() => setRole("Admin"));
+      if (!user) {
+        router.replace("/");
+        // Fail closed: unknown/failed profile reads restrict to Student,
+        // never widen to Admin.
+        setReady(true);
+        return;
       }
-      setReady(true);
+      setEmail(user.email ?? null);
+      // Dashboard renders only after the role is known, so restricted
+      // admin pages never flash for Teacher/Student/Parent roles.
+      if (user.email) {
+        getUserByEmail(user.email)
+          .then((u) => setRole((u?.role as NavRole) ?? "Student"))
+          .catch(() => setRole("Student"))
+          .finally(() => setReady(true));
+      } else {
+        setReady(true);
+      }
     });
     return () => unsub();
   }, [router]);

@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { listStudents, listClasses, getSchoolSettings } from "@/lib/data";
 import type { Student, Class, SchoolSettings } from "@/lib/data";
-import { Card, Button, Select, StatusPill, Alert, EmptyState } from "@/components/ui";
+import { Card, Button, Select, Alert, EmptyState } from "@/components/ui";
 
 export default function DocumentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -41,7 +39,6 @@ export default function DocumentsPage() {
   }, []);
 
   const student = students.find((s) => s.id === selectedStudent);
-  const classOf = classes.find((c) => c.id === student?.class_id);
   const canGenerate = Boolean(student && !student.archived && settings);
 
   const documentTypes = [
@@ -50,14 +47,14 @@ export default function DocumentsPage() {
       label: "Student ID Card",
       icon: "badge",
       description: "Official student identity card with photo and details.",
-      href: (sid: string) => `/dashboard/id-cards`,
+      href: (sid: string) => `/dashboard/id-cards?id=${sid}`,
     },
     {
       key: "report-card",
       label: "Report Card",
       icon: "description",
       description: "Academic results summary with grades and GPA.",
-      href: (sid: string) => `/dashboard/report-cards`,
+      href: (sid: string) => `/dashboard/report-cards?id=${sid}`,
     },
     {
       key: "admit-card",
@@ -123,34 +120,23 @@ export default function DocumentsPage() {
       </header>
 
       <Card className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-slate-600">Select Student *</label>
-            <Select
-              value={selectedStudent}
-              onChange={(e) => setSelectedStudent(e.target.value)}
-            >
-              <option value="">Select a student…</option>
-              {students
-                .filter((s) => !s.archived)
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((s) => (
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-semibold text-slate-600">Select Student *</label>
+          <Select value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)}>
+            <option value="">Select a student…</option>
+            {students
+              .filter((s) => !s.archived)
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((s) => {
+                const cls = classes.find((c) => c.id === s.class_id);
+                return (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.roll_number}) · {classOf?.name ?? ""}
+                    {s.name} ({s.roll_number})
+                    {cls ? ` · ${cls.name} ${cls.section}` : ""}
                   </option>
-                ))}
-            </Select>
-          </div>
-          <div className="flex items-end">
-            <Button
-              variant="primary"
-              disabled={!canGenerate}
-              onClick={() => {}}
-              className="w-full"
-            >
-              Generate Selected
-            </Button>
-          </div>
+                );
+              })}
+          </Select>
         </div>
       </Card>
 
@@ -173,7 +159,7 @@ export default function DocumentsPage() {
                 <Button
                   variant={disabled ? "ghost" : "primary"}
                   disabled={disabled}
-                  onClick={disabled ? undefined : () => {}}
+                  onClick={disabled ? undefined : () => window.location.href = doc.href(student.id)}
                   className="w-full text-sm"
                 >
                   {disabled ? "Select student first" : "Generate"}

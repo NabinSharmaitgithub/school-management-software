@@ -23,5 +23,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "stitch_school_management_system_glassmorphism"]
+  "exclude": ["node_modules", "stitch_school_management_system_glassmorphism", "tests"]
 }
