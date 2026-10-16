@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
               <span className="text-on-surface/50">{CURR(stats.revenue)}</span>
             </div>
             <div className="h-2.5 rounded-full bg-on-surface/10 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: "100%" }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-primary" style={{ width: "100%" }} />
             </div>
             <div className="flex justify-between text-xs mb-1">
               <span className="font-medium text-on-surface/80">Budgeted (fee allocation)</span>
@@ -352,7 +352,7 @@ function Count({ n }: { n: number }) {
 function StatCard(props: { icon: string; tone: string; label: string; sub: string; children: React.ReactNode }) {
   const toneBg: Record<string, string> = {
     indigo: "bg-indigo-500/15 text-indigo-500",
-    teal: "bg-teal-500/15 text-teal-500",
+    teal: "bg-primary/15 text-primary",
     amber: "bg-amber-500/15 text-amber-600",
     emerald: "bg-emerald-500/15 text-emerald-600",
   };
