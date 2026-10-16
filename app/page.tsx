@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { ensureUser } from "@/lib/data";
-import { GlassButton, Input, Field, Alert } from "@/components/ui";
+import { GlassButton, Button, Input, Field, Alert } from "@/components/ui";
 
 const ROLES = ["Admin", "Teacher", "Student", "Parent"] as const;
 
@@ -209,18 +209,12 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              className="glass-btn-ghost py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-medium text-on-surface/80"
-            >
+            <Button variant="ghost" className="w-full">
               <GoogleIcon /> Google
-            </button>
-            <button
-              type="button"
-              className="glass-btn-ghost py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-medium text-on-surface/80"
-            >
+            </Button>
+            <Button variant="ghost" className="w-full">
               <MicrosoftIcon /> Microsoft
-            </button>
+            </Button>
           </div>
         </div>
 

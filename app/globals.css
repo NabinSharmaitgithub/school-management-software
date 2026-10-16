@@ -12,3 +12,81 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* Scrollbar styling for consistent tables */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Backward-compatible glassmorphism classes using the new teal design system */
+@layer components {
+  .glass-panel {
+    @apply bg-white border border-e2e8f0 rounded-lg shadow-sm;
+  }
+
+  .glass-input {
+    @apply bg-white border border-e2e8f0 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all duration-200;
+  }
+  .glass-input:focus {
+    outline: none;
+  }
+
+  .glass-btn-primary {
+    @apply bg-teal-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .glass-btn-primary:hover {
+    transform: translateY(-1px);
+  }
+
+  .glass-btn-ghost {
+    @apply bg-white border border-e2e8f0 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .glass-btn-ghost:hover {
+    transform: translateY(-1px);
+  }
+
+  .glass-btn-danger {
+    @apply bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .glass-btn-danger:hover {
+    transform: translateY(-1px);
+  }
+
+  .glass-pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border;
+  }
+}
+
+/* Skip to main content link for keyboard navigation */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+.sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
