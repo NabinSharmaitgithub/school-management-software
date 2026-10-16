@@ -198,15 +198,6 @@ export default function DashboardPage() {
             Overview of students, staff, fees, and attendance
           </p>
         </div>
-        <div className="relative hidden sm:block w-64">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-            search
-          </span>
-          <input
-            className="pl-10 pr-4 py-2 rounded-lg text-sm bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-teal-600 w-full"
-            placeholder="Search…"
-          />
-        </div>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">

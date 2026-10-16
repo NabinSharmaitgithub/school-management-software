@@ -388,7 +388,7 @@ export default function LibraryPage() {
                     </span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[560px]">
                       <thead>
                         <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                           <th className="pb-3 pr-4">Book Title</th>
@@ -411,7 +411,7 @@ export default function LibraryPage() {
                           return (
                             <tr
                               key={l.id}
-                              className="border-t border-on-surface/10 hover:bg-white/40"
+                              className="border-t border-on-surface/10 hover:bg-slate-50"
                             >
                               <td className="py-3 pr-4 font-medium text-on-surface">
                                 {bookName(l.book_id)}
@@ -484,7 +484,7 @@ export default function LibraryPage() {
                   Overview and collection of outstanding library dues (रु{FINE_PER_DAY}/day overdue).
                 </p>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[560px]">
                     <thead>
                       <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                         <th className="pb-3 pr-4">Borrower</th>
@@ -509,7 +509,7 @@ export default function LibraryPage() {
                           : Math.max(0, daysBetween(l.due_date, today()));
                         const returnId = l.id;
                         return (
-                          <tr key={l.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                          <tr key={l.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                             <td className="py-3 pr-4 font-medium text-on-surface">
                               {names[l.student_id] ?? l.student_id}
                             </td>
@@ -693,7 +693,7 @@ export default function LibraryPage() {
           </Field>
 
           {selectedReturnLoan && (
-            <div className="rounded-lg bg-white/50 border border-white/70 p-3 text-sm space-y-1">
+            <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-sm space-y-1">
               <p className="text-on-surface/70">
                 Current Borrower:{" "}
                 <span className="font-medium text-on-surface">

@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-[420px] relative z-10">
         <div className="glass-panel p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/60 p-3 shadow-sm border border-white/80 flex items-center justify-center text-primary">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-50 p-3 shadow-sm border border-slate-200 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined text-4xl">lock_reset</span>
             </div>
             <h1 className="text-2xl font-semibold mb-2 tracking-tight">Forgot Password</h1>

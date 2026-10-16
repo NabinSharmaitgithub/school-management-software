@@ -340,10 +340,10 @@ export default function HostelPage() {
                           setBlockFilter(b.id);
                           setFloorFilter(0);
                         }}
-                        className={`text-sm rounded-full px-3 py-1.5 border border-white/70 transition ${
+                        className={`text-sm rounded-full px-3 py-1.5 border border-slate-200 transition ${
                           blockFilter === b.id
                             ? "bg-primary/15 text-primary border-primary/30"
-                            : "text-on-surface/70 hover:bg-white/50"
+                            : "text-on-surface/70 hover:bg-slate-50"
                         }`}
                       >
                         {b.label}
@@ -393,7 +393,7 @@ export default function HostelPage() {
                             key={r.id}
                             onClick={() => setSelectedId(r.id)}
                             className={`glass-panel p-3 text-left transition ${
-                              selectedId === r.id ? "ring-2 ring-primary/40" : "hover:bg-white/50"
+                              selectedId === r.id ? "ring-2 ring-primary/40" : "hover:bg-slate-50"
                             }`}
                           >
                             <div className="flex items-center justify-between mb-1">
@@ -448,7 +448,7 @@ export default function HostelPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 my-4">
-                      <div className="rounded-lg bg-white/50 border border-white/70 p-2 text-center">
+                      <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                         <span className="material-symbols-outlined text-lg text-primary/50">
                           meeting_room
                         </span>
@@ -457,7 +457,7 @@ export default function HostelPage() {
                         </p>
                         <p className="text-[10px] text-on-surface/50">Capacity</p>
                       </div>
-                      <div className="rounded-lg bg-white/50 border border-white/70 p-2 text-center">
+                      <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                         <span className="material-symbols-outlined text-lg text-primary/50">
                           group
                         </span>
@@ -478,7 +478,7 @@ export default function HostelPage() {
                       {selected.occupants.map((sid) => (
                         <div
                           key={sid}
-                          className="flex items-center justify-between rounded-lg bg-white/50 border border-white/70 px-3 py-2"
+                          className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2"
                         >
                           <span className="flex items-center gap-2 text-sm text-on-surface/80">
                             <span className="material-symbols-outlined text-base text-primary/50">
@@ -605,7 +605,7 @@ export default function HostelPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[560px]">
                     <thead>
                       <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                         <th className="pb-3 pr-4">Resident</th>
@@ -630,7 +630,7 @@ export default function HostelPage() {
                         const total = f.rent + f.mess + f.laundry;
                         const room = roomOf(f.room_id);
                         return (
-                          <tr key={f.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                          <tr key={f.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                             <td className="py-3 pr-4">
                               <p className="font-medium text-on-surface">
                                 {names[f.student_id] ?? f.student_id}
@@ -814,7 +814,7 @@ export default function HostelPage() {
           const c = collectsFor(collectId);
           return (
             <div className="space-y-4">
-              <div className="rounded-lg bg-white/50 border border-white/70 p-3">
+              <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
                 <p className="font-medium text-on-surface">{c.resident}</p>
                 <p className="text-xs text-on-surface/50">
                   Room {c.room} · {fees.find((f) => f.id === collectId)?.fee_plan}
@@ -854,7 +854,7 @@ export default function HostelPage() {
                       className={`rounded-xl border px-3 py-2.5 flex flex-col items-center gap-1 text-sm transition ${
                         method === label
                           ? "border-primary text-primary bg-primary/10 font-medium"
-                          : "border-white/70 text-on-surface/70 hover:bg-white/50"
+                          : "border-slate-200 text-on-surface/70 hover:bg-slate-50"
                       }`}
                     >
                       <span className="material-symbols-outlined text-lg">{icon}</span>

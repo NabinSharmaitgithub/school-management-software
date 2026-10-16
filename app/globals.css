@@ -29,8 +29,40 @@
   background: #94a3b8;
 }
 
+/* Respect reduced-motion preferences (WCAG 2.3.3 / 2.2 AA) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Ambient decorative background for public pages (login etc.) — purely decorative */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ambient-blob {
+  position: absolute;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 9999px;
+  filter: blur(72px);
+}
+.blob-1 { background: rgb(15 118 110 / 0.14); top: -6rem; left: -6rem; }
+.blob-2 { background: rgb(20 184 166 / 0.12); bottom: -7rem; right: -4rem; }
+.blob-3 { background: rgb(139 92 246 / 0.08); top: 35%; right: 22%; }
+
 /* Backward-compatible glassmorphism classes using the new teal design system */
 @layer components {
+  .card,
   .glass-panel {
     @apply bg-white border border-slate-200 rounded-lg shadow-sm;
   }
@@ -40,15 +72,15 @@
   }
 
   .glass-btn-primary {
-    @apply bg-primary text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply bg-primary text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .glass-btn-ghost {
-    @apply bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .glass-btn-danger {
-    @apply bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .glass-pill {

@@ -329,7 +329,7 @@ export default function AnalyticsPage() {
         </h2>
         <div className="flex flex-wrap gap-2">
           {depts.map((d) => (
-            <div key={d.name} className="flex items-center gap-2 rounded-full border border-white/60 bg-white/40 px-3 py-1.5 text-xs">
+            <div key={d.name} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
               <span className="material-symbols-outlined text-sm text-primary/70">department</span>
               <span className="font-medium text-on-surface/80">{d.name}</span>
               <span className="text-on-surface/50">· {d.count}</span>

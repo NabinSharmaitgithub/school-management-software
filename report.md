@@ -1,6 +1,6 @@
 # Academix — Complete Button Functionality Audit Report
 
-> **Post-audit fix pass (Oct 17 2026, user-requested):** After this audit was approved, all P0–P3 findings plus new static-review findings were fixed directly in source. See section **H. Post-Approval Fix Pass** for the full change list and verification results. Original audit content below is untouched for the record.
+> **UI/UX audit pass (Oct 17 2026, full-site review):** All 41 routes reviewed statically for visual consistency, responsive behavior, broken interactions, and accessibility. Systemic fixes applied via the shared design system. See section **I. UI/UX Audit and Repair** below for scope and results. Original audit + fix-pass content below is preserved for the record.
 
 ## H. Post-Approval Fix Pass
 
@@ -38,6 +38,64 @@ All fixes were applied and verified via static analysis + `npm run build` (clean
 ### H.3 What still needs a browser pass (honest gaps)
 
 The original 230 BLOCKED dashboard controls have **not** been re-exercised in a browser after the CSP fix. The CSP fix is the same one that previously unblocked login/hydration in a live browser session (13/13 login-suite assertions passed pre-CSP-refactor), but dashboard-module regressions (Finance, Transport, Library, etc.) remain untested. Recommend one manual smoke session per module or re-enabling the (already-present, now-excluded-playwright) E2E suite later.
+
+---
+
+## I. UI/UX Audit and Repair (Full-Site Review)
+
+**Scope:** every route under `app/` (41 pages), all `components/`, `globals.css`, `tailwind.config.js`, and the design-system primitives in `components/ui/index.tsx`. Backend, Firebase rules, and business logic untouched.
+
+### I.1 Systemic problems found (fixed once, at the system level)
+
+| # | Problem | Scope | Fix |
+|---|---|---|---|
+| 1 | `className="card ..."` used on 15 surfaces (11 page headers, dashboard panels, shell mobile top bar + mobile nav dropdown) but `.card` was **never defined** in `globals.css` after the glassmorphism→solid migration — those areas rendered with no background, border, or shadow | 6+ files incl. the mobile navigation chrome | Added `.card` alias for `.glass-panel` in `globals.css` |
+| 2 | Glassmorphism remnants (`bg-white/30–70`, `border-white/40–90`, `hover:bg-white/40–80`) inside pages that sit on the solid light background — tint overlays near-invisible on white, row hover feedback dead | 24 files across all dashboard modules | Mechanically replaced with solid-system equivalents (`bg-slate-50`, `border-slate-200`, `hover:bg-slate-50/100`). ID-card template preview interior (which sits on a deliberate gradient) untouched |
+| 3 | `ambient-bg` / `ambient-blob` classes referenced by the login and forgot-password pages but **undefined** — decorative background was silently missing | `app/page.tsx`, `app/forgot-password`, `globals.css` | Implemented restful teal ambient background in `globals.css` (purely decorative, `pointer-events: none`) |
+| 4 | 10 data tables inside `overflow-x-auto` had no `min-width` — on phones, columns crushed instead of scrolling | assignments, attendance-reports, communications, hostel, library, promotion, report-cards, transport | Added `min-w-[560px]` so tables scroll horizontally on mobile without clipping |
+| 5 | Dashboard "Search…" input was a dead control — styled, focusable, no handler | `app/dashboard/page.tsx` | Removed (module pages have their own working search fields) |
+| 6 | Settings logo "delete" glass button said lowercase `delete` (read as icon, meaingless text) | `app/dashboard/settings/page.tsx` | Relabeled "Remove" |
+| 7 | `@next/next/no-img-element` warnings ×14 (print pages use `<img>` deliberately) | `.eslintrc.json` | Rule off — documented as intentional |
+
+### I.2 Accessibility improvements (WCAG 2.2 AA)
+
+- **16 icon-only buttons/links** now carry `aria-label`s (Delete/Edit/View/Restore/Archive + per-row names such as "View details for {name}") — previously announced as blank buttons by screen readers.
+- **`Modal`** now exposes `role="dialog"`, `aria-modal="true"`, `aria-label={title}` (already had focus trap + Escape + focus restore).
+- **`prefers-reduced-motion`** respected globally — animations/transitions collapse to ~0ms (WCAG 2.3.3).
+- **Buttons** switched from `focus:ring` to `focus-visible:ring` — ring shows on keyboard focus without flash on click.
+- Skip-to-content link already present and verified (`app/layout.tsx`).
+- Status never communicated by color alone: `StatusPill`/`GradePill`/`Alert`/`Toast` all carry text + icon.
+
+### I.3 What was verified per area
+
+| Area | Result |
+|---|---|
+| Design tokens (`tailwind.config.js` + `globals.css`) | Consistent teal `primary`/`primary-hover`, slate neutrals, single radius/shadow scale — no conflicts found |
+| Shared components (`components/ui/index.tsx`) | Card/Button/Input/Select/Field/Modal/StatusPill/Alert/Toast/EmptyState/Skeleton/StatCard/PhotoUpload all on token classes; GradePill/GPA utilities consistent |
+| Shell & navigation (`components/dashboard/shell.tsx`) | Role-scoped nav verified per role (fail-closed added earlier); desktop sidebar + mobile top bar + dropdown now all styled (`card` bug) |
+| Dashboard | Stat-card grid `1 → sm:2 → xl:6` verified; dead search removed; both content panels styled |
+| Data management (students/staff/classes/academics) | Tables get `min-w` + horizontal scroll; archive/restore distinct from delete with confirm modals |
+| Academic modules (attendance/marks/bulk/exams/timetable/promotion/reports) | No-op or dead controls: none found; save/print/export states present |
+| Finance + payroll | Payslip school name/currency from settings (earlier fix); payment modal + confirm modals styled |
+| Communications | Bubbles, filters, composer converted to solid palette; Attach disabled with "coming soon"; notice/message create modals fine |
+| Settings/Auth/legal | Login/forgot-password get defined ambient background + consolidated inputs; remove-logo wording fixed |
+
+### I.4 Verification results (all executed)
+
+| Check | Result |
+|---|---|
+| `npm run build` | ✓ Compiled, 41 pages generated |
+| `npx tsc --noEmit` | ✓ Clean |
+| `npx vitest run` | ✓ 9/9 |
+| Lint | Warnings only — pre-existing `react-hooks/exhaustive-deps` (safe: loaders read fresh data) and `no-page-custom-font` (false-positive for App Router; fonts load site-wide from the root layout) |
+| Browser/E2E | **Not run** — Playwright tooling was removed per prior user direction; responsive/interaction findings are from static analysis. A manual pass at 390/768/1366 px is the recommended acceptance step |
+
+### I.5 Known limitations & recommendations
+
+1. **No automated browser checks left in the repo.** If UI regression confidence is needed long-term, re-add a thin Playwright suite (setup + 5 smoke specs) — the earlier infra was removed cleanly and could be restored from git history.
+2. **Icon-only buttons are 32px** (`w-8 h-8`) — above the WCAG 2.2 AA minimum target size (24px) but below the 44px comfortable target; bump to `w-10 h-10` if touch device usage is heavy.
+3. **Footer school name is hard-coded** ("Greenwood International School") in `app/layout.tsx` while documents read it from settings; making the root footer dynamic requires an async server layout read — noted, not changed.
+4. Single shared font link (`Inter`, Material Symbols) via `<link>` — fine for this deployment size; `next/font` would self-host if desired later.
 
 ---
 
@@ -254,7 +312,7 @@ No end-to-end workflows could be completed because Firebase Auth sign-in is bloc
 
 ## Completion Gate
 
-**UPDATE (post-approval):** Fixes were approved and applied — see section H. Original gate text below stands as the audit-phase record.
+**UPDATE (post-approval):** Fixes were approved and applied — see sections **H** (bug-fix pass) and **I** (full-site UI/UX audit). Original gate text below stands as the audit-phase record.
 
 The audit is complete. `report.md` contains actual test results from Playwright execution, not just source-code inferences. **3 controls passed, 3 controls have confirmed UI issues, and 230 controls are blocked due to CSP blocking Firebase Auth.**
 

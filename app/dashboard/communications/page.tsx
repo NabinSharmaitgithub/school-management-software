@@ -354,10 +354,10 @@ export default function CommunicationsPage() {
                   <button
                     key={key}
                     onClick={() => setNoticeFilter(key)}
-                    className={`text-sm rounded-full px-3 py-1.5 border border-white/70 transition ${
+                    className={`text-sm rounded-full px-3 py-1.5 border border-slate-200 transition ${
                       noticeFilter === key
                         ? "bg-primary/15 text-primary border-primary/30"
-                        : "text-on-surface/70 hover:bg-white/50"
+                        : "text-on-surface/70 hover:bg-slate-50"
                     }`}
                   >
                     {label}
@@ -457,7 +457,7 @@ export default function CommunicationsPage() {
                     <span className="text-xs text-on-surface/50">View all</span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[560px]">
                       <thead>
                         <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                           <th className="pb-3 pr-4">Date</th>
@@ -476,7 +476,7 @@ export default function CommunicationsPage() {
                           </tr>
                         )}
                         {broadcasts.map((b) => (
-                          <tr key={b.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                          <tr key={b.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                             <td className="py-3 pr-4 text-on-surface/70">
                               {b.createdAt && typeof b.createdAt === "object" && "seconds" in b.createdAt
                                 ? new Date(
@@ -521,7 +521,7 @@ export default function CommunicationsPage() {
             <GlassCard className="p-0 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-[280px,1fr]">
                 {/* Conversations */}
-                <div className="border-b md:border-b-0 md:border-r border-white/50">
+                <div className="border-b md:border-b-0 md:border-r border-slate-200">
                   <div className="p-4 flex items-center justify-between">
                     <h2 className="text-base font-semibold">Messenger</h2>
                   </div>
@@ -545,8 +545,8 @@ export default function CommunicationsPage() {
                         <button
                           key={t.id}
                           onClick={() => setActiveThread(t.id)}
-                          className={`w-full text-left px-4 py-3 flex items-start gap-3 transition border-b border-white/40 ${
-                            isActive ? "bg-primary/10" : "hover:bg-white/40"
+                          className={`w-full text-left px-4 py-3 flex items-start gap-3 transition border-b border-slate-200 ${
+                            isActive ? "bg-primary/10" : "hover:bg-slate-50"
                           }`}
                         >
                           <span className="relative shrink-0 w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold text-sm">
@@ -587,8 +587,8 @@ export default function CommunicationsPage() {
                           <button
                             key={p.name}
                             onClick={() => startConversation(p.name)}
-                            className={`w-full text-left px-4 py-3 flex items-start gap-3 transition border-b border-white/40 ${
-                              activeThread === p.name ? "bg-primary/10" : "hover:bg-white/40"
+                            className={`w-full text-left px-4 py-3 flex items-start gap-3 transition border-b border-slate-200 ${
+                              activeThread === p.name ? "bg-primary/10" : "hover:bg-slate-50"
                             }`}
                           >
                             <span className="shrink-0 w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold text-sm">
@@ -620,7 +620,7 @@ export default function CommunicationsPage() {
                 {/* Conversation pane */}
                 {active ? (
                   <div className="flex flex-col">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-white/50">
+                    <div className="px-4 py-3 flex items-center justify-between border-b border-slate-200">
                       <div className="flex items-center gap-3">
                         <span className="relative">
                           <span className="material-symbols-outlined text-2xl text-primary/60">
@@ -658,7 +658,7 @@ export default function CommunicationsPage() {
                             className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
                               m.mine
                                 ? "bg-primary text-white rounded-br-md"
-                                : "bg-white/70 border border-white/80 text-on-surface rounded-bl-md"
+                                : "bg-slate-50 border border-slate-200 text-on-surface rounded-bl-md"
                             }`}
                           >
                             <p
@@ -688,7 +688,7 @@ export default function CommunicationsPage() {
 
                     <form
                       onSubmit={onSendMessage}
-                      className="px-4 py-3 border-t border-white/50 flex items-center gap-2"
+                      className="px-4 py-3 border-t border-slate-200 flex items-center gap-2"
                     >
                       <button
                         type="button"
@@ -739,7 +739,7 @@ export default function CommunicationsPage() {
           <Field label="Content *">
             <textarea
               rows={4}
-              className="w-full rounded-xl border border-white/70 bg-white/50 px-3 py-2 text-sm text-on-surface placeholder:text-on-surface/40 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-on-surface placeholder:text-on-surface/40 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
               placeholder="Add the details of this notice…"
               value={noticeForm.body}
               onChange={(e) => setNoticeForm((f) => ({ ...f, body: e.target.value }))}
@@ -852,7 +852,7 @@ export default function CommunicationsPage() {
                   className={`rounded-xl border px-3 py-2.5 flex flex-col items-center gap-1 text-sm transition ${
                     broadcastForm.channel === val
                       ? "border-primary text-primary bg-primary/10 font-medium"
-                      : "border-white/70 text-on-surface/70 hover:bg-white/50"
+                      : "border-slate-200 text-on-surface/70 hover:bg-slate-50"
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg">{icon}</span>
@@ -919,7 +919,7 @@ export default function CommunicationsPage() {
           <Field label="Message Content">
             <textarea
               rows={4}
-              className="w-full rounded-xl border border-white/70 bg-white/50 px-3 py-2 text-sm text-on-surface placeholder:text-on-surface/40 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-on-surface placeholder:text-on-surface/40 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
               placeholder="Type your message…"
               value={broadcastForm.body}
               onChange={(e) => setBroadcastForm((f) => ({ ...f, body: e.target.value }))}
@@ -937,7 +937,7 @@ export default function CommunicationsPage() {
                         body: BROADCAST_TEMPLATES[t],
                       }))
                     }
-                    className="text-[11px] rounded-full border border-white/70 px-2.5 py-1 text-on-surface/60 hover:bg-white/50"
+                    className="text-[11px] rounded-full border border-slate-200 px-2.5 py-1 text-on-surface/60 hover:bg-slate-50"
                   >
                     {t}
                   </button>

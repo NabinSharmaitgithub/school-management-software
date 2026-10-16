@@ -102,7 +102,7 @@ export function NotificationBell() {
                 <div
                   key={n.id}
                   className={`rounded-lg p-3 border ${
-                    n.read ? "bg-white/30 border-white/40" : "bg-primary/10 border-primary/20"
+                    n.read ? "bg-slate-50 border-slate-200" : "bg-primary/10 border-primary/20"
                   }`}
                 >
                   <p className="text-sm font-medium text-on-surface">{n.title}</p>

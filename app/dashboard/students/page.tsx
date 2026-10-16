@@ -200,16 +200,16 @@ export default function StudentsPage() {
                     <td className="py-3.5 pr-4 hidden lg:table-cell text-slate-600">{s.guardian || "—"}</td>
                     <td className="py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/dashboard/students/${s.id}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors border border-slate-200">
+                        <Link href={`/dashboard/students/${s.id}`} aria-label={`View details for ${s.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors border border-slate-200">
                           <span className="material-symbols-outlined text-lg">visibility</span>
                         </Link>
                         {tab === "active" && scope.isAdmin && (
-                          <button onClick={() => { setActiveId(s.id); setArchiveMode("archive"); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-slate-200">
+                          <button onClick={() => { setActiveId(s.id); setArchiveMode("archive"); }} aria-label={`Archive ${s.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-slate-200">
                             <span className="material-symbols-outlined text-lg">archive</span>
                           </button>
                         )}
                         {tab === "archived" && scope.isAdmin && (
-                          <button onClick={() => { setActiveId(s.id); setArchiveMode("restore"); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-slate-200">
+                          <button onClick={() => { setActiveId(s.id); setArchiveMode("restore"); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-slate-200" aria-label="Restore">
                             <span className="material-symbols-outlined text-lg">restore</span>
                           </button>
                         )}

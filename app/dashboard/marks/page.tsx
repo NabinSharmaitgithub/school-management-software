@@ -178,7 +178,7 @@ export default function MarksPage() {
                   m.marks_obtained + (m.has_practical ? m.practical_marks ?? 0 : 0);
                 const pct = totalMax > 0 ? Math.round((totalGot / totalMax) * 100) : 0;
                 return (
-                  <tr key={m.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                  <tr key={m.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                     <td className="py-3 pr-4 font-medium text-on-surface">
                       {students[m.student_id] ?? "Unknown"}
                     </td>
@@ -201,7 +201,7 @@ export default function MarksPage() {
                       <button
                         onClick={() => setConfirm(m.id)}
                         className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
-                      >
+                       aria-label="Delete">
                         <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </td>

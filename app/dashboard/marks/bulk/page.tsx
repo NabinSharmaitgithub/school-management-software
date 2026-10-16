@@ -449,7 +449,7 @@ export default function BulkMarksPage() {
                 const total = hasPractical ? max + maxPrac : max;
                 const info = r.status === "marked" && !err && !pracErr ? gradeInfo(obtained, total) : null;
                 return (
-                  <tr key={r.student.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                  <tr key={r.student.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                     <td className="py-2 pr-4 text-on-surface/70">{r.student.roll_number}</td>
                     <td className="py-2 pr-4 font-medium text-on-surface">{r.student.name}</td>
                     <td className="py-2 pr-4">

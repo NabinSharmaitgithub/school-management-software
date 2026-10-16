@@ -256,7 +256,7 @@ export default function MyClassPage() {
                   {students.map((s) => (
                     <div
                       key={s.id}
-                      className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-white/40 border border-white/60"
+                      className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200"
                     >
                       <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">
                         {s.name
@@ -318,7 +318,7 @@ export default function MyClassPage() {
                   </thead>
                   <tbody>
                     {rows.map((row) => (
-                      <tr key={row.student.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                      <tr key={row.student.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                         <td className="py-3 pr-4 font-medium text-on-surface">{row.student.name}</td>
                         {subjectList.map((s) => {
                           const a = row.sub[s.id];

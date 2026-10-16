@@ -192,14 +192,14 @@ export default function StaffPage() {
                 </thead>
                 <tbody>
                   {filtered.map((s) => (
-                    <tr key={s.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                    <tr key={s.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                       <td className="py-3 pr-4">
                         <Link
                           href={`/dashboard/staff/${s.id}`}
                           className="flex items-center gap-3 group"
                         >
                           {s.photo_url ? (
-                            <img src={s.photo_url} alt={s.name} className="w-9 h-9 rounded-full object-cover border border-white/70 bg-white/60 shrink-0" />
+                            <img src={s.photo_url} alt={s.name} className="w-9 h-9 rounded-full object-cover border border-slate-200 bg-slate-50 shrink-0" />
                           ) : (
                             <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">
                               {s.name
@@ -231,6 +231,7 @@ export default function StaffPage() {
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/dashboard/staff/${s.id}`}
+                            aria-label={`View details for ${s.name}`}
                             className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary"
                           >
                             <span className="material-symbols-outlined text-lg">visibility</span>
@@ -239,7 +240,7 @@ export default function StaffPage() {
                             <button
                               onClick={() => setActive(s.id)}
                               className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
-                            >
+                             aria-label="Delete">
                               <span className="material-symbols-outlined text-lg">delete</span>
                             </button>
                           )}
@@ -274,7 +275,7 @@ export default function StaffPage() {
                 </thead>
                 <tbody>
                   {leaves.map((l) => (
-                    <tr key={l.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                    <tr key={l.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                       <td className="py-3 pr-4 font-medium text-on-surface">
                         {names[l.staff_id] ?? l.staff_id}
                       </td>

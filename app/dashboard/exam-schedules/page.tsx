@@ -535,7 +535,7 @@ export default function ExamSchedulesPage() {
                   className={`rounded-lg border px-2 py-1.5 text-xs transition ${
                     slot.class_ids.includes(c.id)
                       ? "border-primary bg-primary/15 text-primary font-semibold"
-                      : "border-white/60 hover:bg-white/40 text-on-surface/70"
+                      : "border-slate-200 hover:bg-slate-50 text-on-surface/70"
                   }`}
                 >
                   {c.name.replace("Grade ", "")} {c.section}
@@ -569,7 +569,7 @@ export default function ExamSchedulesPage() {
                   className={`rounded-full border px-3 py-1.5 text-xs transition ${
                     bulkClasses.includes(c.id)
                       ? "border-primary bg-primary/15 text-primary font-semibold"
-                      : "border-white/60 hover:bg-white/40 text-on-surface/70"
+                      : "border-slate-200 hover:bg-slate-50 text-on-surface/70"
                   }`}
                 >
                   {c.name.replace("Grade ", "")} {c.section}

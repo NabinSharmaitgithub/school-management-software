@@ -80,7 +80,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px] relative z-10">
         <div className="glass-panel p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/60 p-3 shadow-sm border border-white/80 flex items-center justify-center text-primary">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-50 p-3 shadow-sm border border-slate-200 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined text-4xl">school</span>
             </div>
             <h1 className="text-2xl font-semibold text-on-surface mb-2 tracking-tight">
@@ -89,7 +89,7 @@ export default function LoginPage() {
             <p className="text-sm text-on-surface/70">Sign in to Academix Portal</p>
           </div>
 
-          <div className="flex p-1 bg-white/40 rounded-full mb-8 border border-white/60" role="radiogroup" aria-label="Select role">
+          <div className="flex p-1 bg-slate-50 rounded-full mb-8 border border-slate-200" role="radiogroup" aria-label="Select role">
             {ROLES.map((r) => (
               <button
                 key={r}
@@ -100,7 +100,7 @@ export default function LoginPage() {
                 className={`flex-1 py-1.5 px-3 rounded-full text-xs transition-all ${
                   role === r
                     ? "bg-primary text-white font-semibold shadow-md"
-                    : "font-medium text-on-surface/80 hover:bg-white/80"
+                    : "font-medium text-on-surface/80 hover:bg-slate-100"
                 }`}
               >
                 {r}
@@ -160,7 +160,7 @@ export default function LoginPage() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="peer sr-only"
                 />
-                <span className="w-4 h-4 rounded border border-on-surface/30 bg-white/50 peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center pointer-events-none">
+                <span className="w-4 h-4 rounded border border-on-surface/30 bg-slate-50 peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center pointer-events-none">
                   <span className="material-symbols-outlined text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">check</span>
                 </span>
                 <span className="text-xs text-on-surface/70">Remember me</span>

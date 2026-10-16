@@ -5,9 +5,9 @@ import { cn } from "@/lib/cn";
 
 const CARD = "bg-white border border-slate-200 rounded-lg shadow-sm";
 const INPUT = "bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200";
-const BTN_PRIMARY = "bg-primary text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed";
-const BTN_GHOST = "bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed";
-const BTN_DANGER = "bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed";
+const BTN_PRIMARY = "bg-primary text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed";
+const BTN_GHOST = "bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed";
+const BTN_DANGER = "bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:opacity-60 disabled:cursor-not-allowed";
 
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn(CARD, className)} {...props}>{children}</div>;
@@ -51,7 +51,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" ref={overlayRef}>
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} onKeyDown={(e) => e.stopPropagation()} />
-      <div ref={panelRef} tabIndex={-1} className={cn("relative z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto outline-none", wide ? "max-w-2xl" : "max-w-md")} onClick={(e) => e.stopPropagation()}>
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={cn("relative z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto outline-none", wide ? "max-w-2xl" : "max-w-md")} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-slate-900">{title}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-rose-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Close modal"><span className="material-symbols-outlined text-lg">close</span></button>
@@ -116,9 +116,9 @@ export function PhotoUpload({ value, onFile, alt }: { value: string; onFile: (fi
   return (
     <div className="flex items-center gap-3">
       {localUrl || value ? <img src={localUrl || value} alt={alt ?? "photo"} className="h-16 w-16 rounded-full object-cover border border-slate-200 bg-slate-50 shrink-0" /> : (
-        <div className="h-16 w-16 rounded-full border border-dashed border-slate-200 bg-white/50 flex items-center justify-center text-slate-500 shrink-0"><span className="material-symbols-outlined text-2xl">person</span></div>
+        <div className="h-16 w-16 rounded-full border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-500 shrink-0"><span className="material-symbols-outlined text-2xl">person</span></div>
       )}
-      <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-white/50 py-2.5 cursor-pointer hover:bg-slate-50 text-xs text-slate-500">
+      <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 py-2.5 cursor-pointer hover:bg-slate-50 text-xs text-slate-500">
         <span className="material-symbols-outlined text-lg">upload</span>{uploading ? "Uploading…" : localUrl || value ? "Change photo" : "Upload photo"}
         <input type="file" accept="image/*" className="hidden" onChange={onChange} />
       </label>

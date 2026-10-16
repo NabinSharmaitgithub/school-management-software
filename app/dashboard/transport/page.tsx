@@ -394,7 +394,7 @@ export default function TransportPage() {
                     <button
                       key={r.id}
                       onClick={() => setStopsFor(r.id)}
-                      className="glass-panel p-4 text-left transition hover:bg-white/50"
+                      className="glass-panel p-4 text-left transition hover:bg-slate-50"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-on-surface">{r.name}</span>
@@ -409,23 +409,23 @@ export default function TransportPage() {
                         {r.driver_name ?? "No driver"}
                       </p>
                       <div className="grid grid-cols-3 gap-2 mb-3">
-                        <div className="rounded-lg bg-white/50 border border-white/70 p-2 text-center">
+                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                           <span className="material-symbols-outlined text-base text-primary/50">pin_drop</span>
                           <p className="text-sm font-semibold text-on-surface">{r.stops.length}</p>
                           <p className="text-[10px] text-on-surface/50">Stops</p>
                         </div>
-                        <div className="rounded-lg bg-white/50 border border-white/70 p-2 text-center">
+                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                           <span className="material-symbols-outlined text-base text-primary/50">groups</span>
                           <p className="text-sm font-semibold text-on-surface">{riders}</p>
                           <p className="text-[10px] text-on-surface/50">Students</p>
                         </div>
-                        <div className="rounded-lg bg-white/50 border border-white/70 p-2 text-center">
+                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                           <span className="material-symbols-outlined text-base text-primary/50">event_seat</span>
                           <p className="text-sm font-semibold text-on-surface">{r.capacity}</p>
                           <p className="text-[10px] text-on-surface/50">Capacity</p>
                         </div>
                       </div>
-                      <div className="h-1 rounded-full bg-white/70 overflow-hidden">
+                      <div className="h-1 rounded-full bg-slate-50 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-primary/70"
                           style={{ width: `${capPct}%` }}
@@ -511,7 +511,7 @@ export default function TransportPage() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                       <th className="pb-3 pr-3">
@@ -542,7 +542,7 @@ export default function TransportPage() {
                     {filteredRows.map((row) => {
                       const r = routeOf(row.route_id);
                       return (
-                        <tr key={row.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                        <tr key={row.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                           <td className="py-3 pr-3">
                             <input
                               type="checkbox"
@@ -649,7 +649,7 @@ export default function TransportPage() {
                   .map((v) => {
                     const r = routeOf(v.route_id);
                     return (
-                      <button key={v.id} onClick={() => setVehicleOpen(v.id)} className="glass-panel p-4 text-left transition hover:bg-white/50">
+                      <button key={v.id} onClick={() => setVehicleOpen(v.id)} className="glass-panel p-4 text-left transition hover:bg-slate-50">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-2xl text-primary/60">directions_bus</span>
@@ -773,7 +773,7 @@ export default function TransportPage() {
       <Modal open={!!stopsFor} onClose={() => setStopsFor("")} title={routeOf(stopsFor)?.name ?? "Route"}>
         <div className="space-y-3 mb-6">
           {(routeOf(stopsFor)?.stops ?? []).map((s, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
+            <div key={i} className="flex items-center gap-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
               <span className="material-symbols-outlined text-base text-primary/50">schedule</span>
               <span className="flex-1 text-on-surface/80">{s.name}</span>
               <span className="text-on-surface/60">{s.stop_time}</span>
@@ -792,7 +792,7 @@ export default function TransportPage() {
       {/* ── Assign single student modal ──────────────────────── */}
       <Modal open={!!assignFor} onClose={() => setAssignFor("")} title="Assign Route">
         <div className="space-y-4">
-          <p className="mb-4 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm text-on-surface/80">
+          <p className="mb-4 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-on-surface/80">
             {assignFor ? (names[assignFor] ?? "") : ""}
           </p>
           <Field label="Route">
@@ -829,7 +829,7 @@ export default function TransportPage() {
         {vehicle && (
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-white/50 border border-white/70 p-3">
+              <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
                 <p className="text-xs text-on-surface/50 mb-1">Status</p>
                 {vehicle.status === "active" ? (
                   <StatusPill tone="success">Active</StatusPill>
@@ -837,7 +837,7 @@ export default function TransportPage() {
                   <StatusPill tone="warning">Maintenance</StatusPill>
                 )}
               </div>
-              <div className="rounded-lg bg-white/50 border border-white/70 p-3">
+              <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
                 <p className="text-xs text-on-surface/50 mb-1">Capacity</p>
                 <p className="text-sm font-semibold text-on-surface">{vehicle.capacity_seats} Seater</p>
               </div>
@@ -846,7 +846,7 @@ export default function TransportPage() {
             <div>
               <p className="text-xs font-medium text-on-surface/70 mb-2">Compliance &amp; Documents</p>
               <div className="space-y-2">
-                <div className="flex items-center justify-between rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
                   <span className="flex items-center gap-2 text-on-surface/80">
                     <span className="material-symbols-outlined text-base text-primary/50">shield</span>
                     Insurance
@@ -859,7 +859,7 @@ export default function TransportPage() {
                     )}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
                   <span className="flex items-center gap-2 text-on-surface/80">
                     <span className="material-symbols-outlined text-base text-primary/50">badge</span>
                     Permit
@@ -876,7 +876,7 @@ export default function TransportPage() {
             </div>
 
             {vehicle.driver_name && (
-              <div className="flex items-center gap-3 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
+              <div className="flex items-center gap-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
                 <span className="material-symbols-outlined text-xl text-primary/50">person</span>
                 <div>
                   <p className="font-medium text-on-surface">{vehicle.driver_name}</p>
@@ -901,7 +901,7 @@ export default function TransportPage() {
               ) : (
                 <div className="space-y-1.5">
                   {vehicle.services.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
+                    <div key={i} className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
                       <span className="flex items-center gap-2 text-on-surface/80">
                         <span className="material-symbols-outlined text-base text-primary/50">build</span>
                         <span>

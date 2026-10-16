@@ -280,7 +280,7 @@ export default function PayrollSection() {
       <Modal open={!!preview} onClose={() => setPreview(null)} title={`Payslip · ${preview ? monthLabel(preview.month) : ""}`}>
         {preview && (
           <div>
-            <div className="rounded-xl border border-white/70 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between border-b border-on-surface/10 pb-3 mb-3">
                 <div>
                   <p className="font-bold text-primary">{settings?.school_name || "Academix High"}</p>

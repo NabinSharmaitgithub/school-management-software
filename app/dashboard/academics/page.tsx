@@ -31,14 +31,14 @@ export default function AcademicsPage() {
           <h1 className="text-xl font-semibold">Academics</h1>
           <p className="text-sm text-on-surface/60">Classes, sections and subjects</p>
         </div>
-        <div className="flex gap-1 bg-white/40 border border-white/60 rounded-lg p-1">
+        <div className="flex gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1">
           {(["classes", "subjects"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-md text-sm transition-all ${
                 tab === t
-                  ? "bg-white/70 text-on-surface shadow-sm font-semibold"
+                  ? "bg-slate-50 text-on-surface shadow-sm font-semibold"
                   : "text-on-surface/60 hover:text-on-surface"
               }`}
             >
@@ -144,15 +144,15 @@ function ClassesTable({
             </thead>
             <tbody>
               {classes.map((c) => (
-                <tr key={c.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                <tr key={c.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                   <td className="py-3 pr-4 font-medium">{c.name}</td>
                   <td className="py-3 pr-4 text-on-surface/70">{c.section}</td>
                   <td className="py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => open(c)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary">
+                      <button onClick={() => open(c)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary" aria-label="Edit">
                         <span className="material-symbols-outlined text-lg">edit</span>
                       </button>
-                      <button onClick={() => setConfirm(c.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose">
+                      <button onClick={() => setConfirm(c.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose" aria-label="Delete">
                         <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </div>
@@ -311,16 +311,16 @@ function SubjectsTable({
             </thead>
             <tbody>
               {subjects.map((s) => (
-                <tr key={s.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                <tr key={s.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                   <td className="py-3 pr-4 font-mono text-xs text-on-surface/70">{s.code || "—"}</td>
                   <td className="py-3 pr-4 font-medium">{s.name}</td>
                   <td className="py-3 pr-4 hidden md:table-cell text-on-surface/60">{s.description || "—"}</td>
                   <td className="py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => open(s)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary">
+                      <button onClick={() => open(s)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary" aria-label="Edit">
                         <span className="material-symbols-outlined text-lg">edit</span>
                       </button>
-                      <button onClick={() => setConfirm(s.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose">
+                      <button onClick={() => setConfirm(s.id)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose" aria-label="Delete">
                         <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </div>

@@ -338,7 +338,7 @@ export default function ReportCardsPage() {
           ) : loading ? (
             <GlassCard className="p-8 text-center text-sm text-on-surface/60">Loading…</GlassCard>
           ) : (
-            <div ref={reportRef} key={`print-${student.id}`} className="bg-white rounded-xl border border-white/80 shadow-lg p-8 max-w-[850px] mx-auto print:shadow-none print:border-0 print:p-0">
+            <div ref={reportRef} key={`print-${student.id}`} className="bg-white rounded-xl border border-slate-200 shadow-lg p-8 max-w-[850px] mx-auto print:shadow-none print:border-0 print:p-0">
               {/* Header */}
               <div className="flex items-center justify-between border-b-2 border-slate-900 pb-5 mb-6">
                 <div className="flex items-center gap-5">
@@ -397,7 +397,7 @@ export default function ReportCardsPage() {
 
               {/* Marks table */}
               <div className="w-full overflow-x-auto mb-6">
-                <table className="w-full border-collapse text-left">
+                <table className="w-full border-collapse text-left min-w-[560px]">
                   <thead>
                     <tr className="bg-slate-900 text-white">
                       <th className="py-3 px-3.5 text-xs font-semibold uppercase tracking-wide text-center">S.N.</th>

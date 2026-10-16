@@ -300,7 +300,7 @@ export default function TimetablePage() {
                         <td key={day} className="p-0">
                           <button
                             onClick={() => openCell(day, slot.start)}
-                            className={`w-full min-h-16 rounded-lg border text-left px-2 py-1.5 transition hover:bg-white/40 ${
+                            className={`w-full min-h-16 rounded-lg border text-left px-2 py-1.5 transition hover:bg-slate-50 ${
                               entry ? "bg-primary/10 border-primary/30" : "bg-on-surface/[0.03] border-on-surface/10"
                             }`}
                           >
@@ -469,7 +469,7 @@ export default function TimetablePage() {
                       End
                       <Input type="time" className="!py-1.5 !px-2 !w-28" value={slot.end} onChange={(e) => updSlot(i, { end: e.target.value })} />
                     </label>
-                    <GlassButton type="button" variant="ghost" onClick={() => rmSlot(i)}>
+                    <GlassButton type="button" variant="ghost" aria-label={`Remove slot ${i + 1}`} onClick={() => rmSlot(i)}>
                       <span className="material-symbols-outlined text-lg">delete</span>
                     </GlassButton>
                   </div>

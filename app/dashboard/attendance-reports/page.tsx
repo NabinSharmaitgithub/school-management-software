@@ -204,7 +204,7 @@ export default function AttendanceReportsPage() {
       {view === "class" ? (
         <Card className="p-4">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
                   <th className="pb-3.5 pr-4">Class</th>
@@ -244,7 +244,7 @@ export default function AttendanceReportsPage() {
       ) : (
         <Card className="p-4">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
                   <th className="pb-3.5 pr-4">Student</th>
@@ -289,7 +289,7 @@ export default function AttendanceReportsPage() {
         <Card className="p-4">
           <h2 className="font-semibold text-slate-900 mb-3 text-sm">Recent Attendance Corrections</h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
                   <th className="pb-3.5 pr-4">Student</th>

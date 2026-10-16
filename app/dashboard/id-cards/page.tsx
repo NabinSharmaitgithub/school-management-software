@@ -102,7 +102,7 @@ export default function IdCardsPage() {
                   key={s}
                   onClick={() => setStyle(s)}
                   className={`rounded-lg border px-3 py-2 text-xs transition ${
-                    style === s ? "border-primary bg-primary/15 text-primary font-semibold" : "border-white/70 hover:bg-white/50 text-on-surface/70"
+                    style === s ? "border-primary bg-primary/15 text-primary font-semibold" : "border-slate-200 hover:bg-slate-50 text-on-surface/70"
                   }`}
                 >
                   {s}
@@ -164,7 +164,7 @@ export default function IdCardsPage() {
               <div
                 className={
                   style === "Classic"
-                    ? "aspect-[1.6] rounded-2xl bg-white border border-white/80 shadow-xl p-4 flex flex-col justify-between overflow-hidden"
+                    ? "aspect-[1.6] rounded-2xl bg-white border border-slate-200 shadow-xl p-4 flex flex-col justify-between overflow-hidden"
                     : "aspect-[1.6] rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] relative"
                 }
               >

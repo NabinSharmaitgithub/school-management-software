@@ -127,7 +127,7 @@ export default function StaffProfilePage() {
           </Link>
           <div className="flex items-center gap-3">
             {staff.photo_url ? (
-              <img src={staff.photo_url} alt={staff.name} className="h-12 w-12 rounded-full object-cover border border-white/70 bg-white/60 shrink-0" />
+              <img src={staff.photo_url} alt={staff.name} className="h-12 w-12 rounded-full object-cover border border-slate-200 bg-slate-50 shrink-0" />
             ) : (
               <span className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
                 {staff.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
@@ -262,7 +262,7 @@ export default function StaffProfilePage() {
             {leaves.map((l) => (
               <div
                 key={l.id}
-                className="rounded-lg bg-white/40 border border-white/60 p-4 flex flex-wrap items-center justify-between gap-3"
+                className="rounded-lg bg-slate-50 border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3"
               >
                 <div>
                   <p className="text-sm font-medium text-on-surface">

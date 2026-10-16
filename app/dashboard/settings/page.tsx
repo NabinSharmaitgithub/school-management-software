@@ -245,14 +245,14 @@ export default function SettingsPage() {
                       </p>
                       <div className="flex items-center gap-3">
                         {settings?.logo_url ? (
-                          <img src={settings.logo_url} alt="School logo" className="h-12 rounded-lg border border-white/70 bg-white/60 object-contain p-1" />
+                          <img src={settings.logo_url} alt="School logo" className="h-12 rounded-lg border border-slate-200 bg-slate-50 object-contain p-1" />
                         ) : (
-                          <div className="flex-1 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 text-center text-xs text-on-surface/40">No logo yet</div>
+                          <div className="flex-1 rounded-lg border border-dashed border-slate-200 bg-slate-50 py-3 text-center text-xs text-on-surface/40">No logo yet</div>
                         )}
                         {uploading ? (
                           <GlassButton disabled>Uploading…</GlassButton>
                         ) : (
-                          <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/70 bg-white/40 py-3 cursor-pointer hover:bg-white/60 text-xs text-on-surface/60">
+                          <label className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 py-3 cursor-pointer hover:bg-slate-100 text-xs text-on-surface/60">
                             <span className="material-symbols-outlined text-lg">upload</span>
                             {logoName || "Upload New"}
                             <input
@@ -264,7 +264,7 @@ export default function SettingsPage() {
                           </label>
                         )}
                         {logoName && !uploading && (
-                          <GlassButton variant="ghost" onClick={() => setLogoName("")}>delete</GlassButton>
+                          <GlassButton variant="ghost" onClick={() => setLogoName("")}>Remove</GlassButton>
                         )}
                       </div>
                     </div>
@@ -369,7 +369,7 @@ export default function SettingsPage() {
 
                       <div className="space-y-2">
                         {s.fees.map((f, i) => (
-                          <div key={i} className="flex items-center justify-between rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm">
+                          <div key={i} className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
                             <span className="flex items-center gap-2 text-on-surface/80">
                               <span className="material-symbols-outlined text-base text-primary/50">
                                 {KIND_ICONS[f.kind] ?? "receipt_long"}
@@ -413,7 +413,7 @@ export default function SettingsPage() {
                   {users.map((usr) => (
                     <div
                       key={usr.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white/50 border border-white/70 px-3 py-2 text-sm"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm"
                     >
                       <div className="min-w-0">
                         <p className="font-medium text-on-surface truncate">{usr.email}</p>

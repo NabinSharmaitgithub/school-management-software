@@ -208,7 +208,7 @@ export default function AssignmentsPage() {
             </form>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                     <th className="pb-3 pr-4">Class</th>
@@ -225,7 +225,7 @@ export default function AssignmentsPage() {
                   {classes.map((c) => {
                     const a = classTeacherByClass[c.id];
                     return (
-                      <tr key={c.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                      <tr key={c.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                         <td className="py-3 pr-4 font-medium text-on-surface">
                           {c.name} {c.section}
                         </td>
@@ -309,7 +309,7 @@ export default function AssignmentsPage() {
             </form>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                     <th className="pb-3 pr-4">Class</th>
@@ -329,7 +329,7 @@ export default function AssignmentsPage() {
                   {subjectAssignments.map((a) => {
                     const subj = subjects.find((x) => x.id === a.subject_id);
                     return (
-                      <tr key={a.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                      <tr key={a.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                         <td className="py-3 pr-4 font-medium text-on-surface">{className(a.class_id)}</td>
                         <td className="py-3 pr-4 text-on-surface/70">{subj?.name ?? a.subject_id}</td>
                         <td className="py-3 pr-4 text-on-surface/70">

@@ -370,7 +370,7 @@ export default function FinancePage() {
               </thead>
               <tbody>
                 {payments.map((p) => (
-                  <tr key={p.id} className="border-t border-on-surface/10 hover:bg-white/40">
+                  <tr key={p.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                     <td className="py-3 pr-4 font-medium text-on-surface">
                       {students[p.student_id] ?? "Unknown"}
                     </td>
@@ -386,7 +386,7 @@ export default function FinancePage() {
                       <button
                         onClick={() => setConfirm(p.id)}
                         className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-rose"
-                      >
+                       aria-label="Delete">
                         <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </td>
@@ -431,7 +431,7 @@ export default function FinancePage() {
               </Select>
             </Field>
             {genMsg && (
-              <p className="text-xs text-on-surface/60 bg-white/40 border border-on-surface/10 rounded-lg px-3 py-2">
+              <p className="text-xs text-on-surface/60 bg-slate-50 border border-on-surface/10 rounded-lg px-3 py-2">
                 {genMsg}
               </p>
             )}
@@ -461,7 +461,7 @@ export default function FinancePage() {
                   </thead>
                   <tbody>
                     {rows.map((b) => (
-                      <tr key={b.id} className="border-b border-on-surface/5 hover:bg-white/40">
+                      <tr key={b.id} className="border-b border-on-surface/5 hover:bg-slate-50">
                         <td className="py-3 pr-2 font-medium text-on-surface">{b.student_name}</td>
                         <td className="py-3 pr-2 hidden md:table-cell text-on-surface/70">{b.class_name}</td>
                         <td className="py-3 pr-2 hidden lg:table-cell text-on-surface/70">{b.due_date}</td>
@@ -606,7 +606,7 @@ export default function FinancePage() {
       <Modal open={!!receipt} onClose={() => setReceipt(null)} title="Payment recorded">
         {receipt && (
           <div className="space-y-4">
-            <div className="bg-white/40 border border-on-surface/10 rounded-lg p-4 text-sm space-y-1">
+            <div className="bg-slate-50 border border-on-surface/10 rounded-lg p-4 text-sm space-y-1">
               <p className="font-semibold text-on-surface">Receipt {receipt.number}</p>
               <p>{receipt.inv.student_name} · {monthLabel(receipt.inv.month)}</p>
               <p className="text-success font-semibold">{CURR(receipt.paid)} via {receipt.method}</p>

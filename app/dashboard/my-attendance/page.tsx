@@ -114,7 +114,7 @@ export default function MyAttendancePage() {
                   const dayNum = Number(d.slice(8));
                   if (!status) {
                     return (
-                      <div key={d} className="rounded-lg bg-white/30 border border-white/50 p-2 text-center">
+                      <div key={d} className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                         <p className="text-xs text-on-surface/40">{dayNum}</p>
                         <p className="text-[10px] text-on-surface/30">—</p>
                       </div>
@@ -127,7 +127,7 @@ export default function MyAttendancePage() {
                         ? ["warning", "Late"]
                         : ["error", "Absent"];
                   return (
-                    <div key={d} className="rounded-lg bg-white/40 border border-white/60 p-2 text-center">
+                    <div key={d} className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-center">
                       <p className="text-xs font-medium text-on-surface">{dayNum}</p>
                       <StatusPill tone={tone as "success" | "warning" | "error"}>{label}</StatusPill>
                     </div>
