@@ -5,13 +5,13 @@ import { cn } from "@/lib/cn";
 
 const CARD = "bg-white border border-e2e8f0 rounded-lg shadow-sm";
 const INPUT =
-  "bg-white border border-e2e8f0 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all duration-200";
+  "bg-white border border-e2e8f0 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 transition-all duration-200";
 const BTN_PRIMARY =
-  "bg-teal-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed";
+  "bg-teal-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus-visible:ring-2 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed";
 const BTN_GHOST =
-  "bg-white border border-e2e8f0 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:opacity-60 disabled:cursor-not-allowed";
+  "bg-white border border-e2e8f0 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus-visible:ring-2 disabled:opacity-60 disabled:cursor-not-allowed";
 const BTN_DANGER =
-  "bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed";
+  "bg-red-600 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30 focus-visible:ring-2 disabled:opacity-60 disabled:cursor-not-allowed";
 
 /** Card: white surface with subtle border and shadow. */
 export function Card({
@@ -72,7 +72,7 @@ export function StatusPill({
   );
 }
 
-/** Modal overlay + panel. Clicking backdrop closes. Accessible focus management. */
+/** Modal overlay + panel. Accessible focus management with Esc and Tab trapping. */
 export function Modal({
   open,
   onClose,
@@ -147,10 +147,10 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-slate-900">{title}</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-rose-600 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-rose-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
             aria-label="Close modal"
           >
             <span className="material-symbols-outlined text-lg">close</span>
@@ -162,19 +162,23 @@ export function Modal({
   );
 }
 
-/** Form field wrapper with label. */
+/** Form field wrapper with label. Accessibly associates label with input. */
 export function Field({
   label,
   children,
   className,
+  required,
 }: {
   label: string;
   children: React.ReactNode;
   className?: string;
+  required?: boolean;
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label className="block text-xs font-semibold text-slate-600 ml-1">{label}</label>
+      <label className="block text-xs font-semibold text-slate-600 ml-1">
+        {label}{required ? <span className="text-rose-600 ml-1" aria-hidden="true">*</span> : null}
+      </label>
       {children}
     </div>
   );
@@ -211,12 +215,13 @@ export function gpaFor(pct: number) {
   return GRADE_BANDS.find((b) => pct >= b.threshold)?.gpa ?? 0;
 }
 
-/** Grade pill for marks — uses the canonical grade bands. */
+/** Grade pill for marks — uses canonical grade bands. */
 export function GradePill({ pct }: { pct: number }) {
-  const grade = gradeFor(pct);
-  const tone =
-    grade === "A+" ? "success" : grade === "A" ? "primary" : grade === "B+" ? "primary" : grade === "B" ? "warning" : grade === "C" ? "neutral" : grade === "D" ? "warning" : "error";
-  return <StatusPill tone={tone as any}>{grade}</StatusPill>;
+  if (pct >= 90) return <StatusPill tone="success">A+</StatusPill>;
+  if (pct >= 75) return <StatusPill tone="primary">A</StatusPill>;
+  if (pct >= 60) return <StatusPill tone="warning">B</StatusPill>;
+  if (pct >= 40) return <StatusPill tone="neutral">C</StatusPill>;
+  return <StatusPill tone="error">F</StatusPill>;
 }
 
 /** Consistent alert message component. */
@@ -307,7 +312,7 @@ export function PhotoUpload({
         {uploading ? "Uploading…" : localUrl || value ? "Change photo" : "Upload photo"}
         <input type="file" accept="image/*" className="hidden" onChange={onChange} />
       </label>
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {error ? <span className="text-xs text-rose-600">{error}</span> : null}
     </div>
   );
 }
@@ -336,7 +341,7 @@ export function StatCard({
   return (
     <div className={cn(CARD, "p-5 flex flex-col gap-3")}>
       <div className={`w-10 h-10 rounded-lg grid place-items-center ${toneCls[tone]}`}>
-        <span className="material-symbols-outlined text-lg">{icon}</span>
+        <span className="material-symbols-outlined text-lg" aria-hidden="true">{icon}</span>
       </div>
       <div>
         <p className="text-2xl font-semibold text-slate-900">{value}</p>
@@ -363,7 +368,6 @@ export function DataTable({
   );
 }
 
-/** Table header cell. */
 export function TableHeader({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <thead className={cn("text-left text-xs uppercase tracking-wide text-slate-500 border-b border-e2e8f0", className)}>
@@ -372,7 +376,6 @@ export function TableHeader({ children, className }: { children: React.ReactNode
   );
 }
 
-/** Table row. */
 export function TableRow({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <tr className={cn("border-b border-e2e8f0 hover:bg-slate-50 transition-colors", className)}>
@@ -381,7 +384,6 @@ export function TableRow({ children, className }: { children: React.ReactNode; c
   );
 }
 
-/** Table cell. */
 export function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={cn("py-3.5 pr-4 text-slate-600", className)}>{children}</td>;
 }
@@ -400,7 +402,9 @@ export function EmptyState({
 }) {
   return (
     <div className={cn(CARD, "p-12 flex flex-col items-center justify-center text-center gap-3")}>
-      <span className="material-symbols-outlined text-5xl text-slate-400">{icon}</span>
+      <span className="material-symbols-outlined text-5xl text-slate-400" aria-hidden="true">
+        {icon}
+      </span>
       <p className="font-medium text-slate-900">{title}</p>
       {description && <p className="text-sm text-slate-500 max-w-md">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
@@ -439,12 +443,14 @@ export function Toast({
   };
   return (
     <div className={cn("text-xs rounded-lg px-3 py-2 border flex items-start gap-3", typeStyles[type])}>
-      <span className="material-symbols-outlined text-lg mt-0.5">{icons[type]}</span>
+      <span className="material-symbols-outlined text-lg mt-0.5" aria-hidden="true">
+        {icons[type]}
+      </span>
       <div className="flex-1">
         <p className="text-sm text-slate-900 font-medium">{message}</p>
       </div>
       {onClose && (
-        <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 p-0">
+        <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600" aria-label="Dismiss">
           <span className="material-symbols-outlined text-sm">close</span>
         </button>
       )}

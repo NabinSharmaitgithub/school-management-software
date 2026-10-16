@@ -18,7 +18,6 @@ export default function IdCardsPage() {
   const [showBlood, setShowBlood] = useState(true);
   const [showEmergency, setShowEmergency] = useState(true);
   const [showValidity, setShowValidity] = useState(true);
-  const [bulk, setBulk] = useState<"idle" | "running" | "done">("idle");
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
 
   useEffect(() => {
@@ -134,16 +133,14 @@ export default function IdCardsPage() {
           <div className="pt-2 border-t border-on-surface/10">
             <GlassButton
               className="w-full"
-              disabled={bulk === "running"}
-              onClick={() => {
-                setBulk("running");
-                setTimeout(() => setBulk("done"), 1200);
-              }}
+              disabled={true}
             >
-              <span className="material-symbols-outlined text-lg">auto_awesome</span>
-              {bulk === "running" ? "Generating…" : bulk === "done" ? "Generated ✓" : "Generate Bulk"}
+              <span className="material-symbols-outlined text-lg">info</span>
+              Bulk generation unavailable
             </GlassButton>
-            {bulk === "done" && <p className="text-xs text-success mt-2">Queued {students.length} cards. No-print demo build.</p>}
+            <p className="text-xs text-slate-500 mt-2">
+              Generate cards individually by selecting a student above.
+            </p>
           </div>
         </GlassCard>
 
@@ -159,7 +156,7 @@ export default function IdCardsPage() {
                 <p className="text-xs text-on-surface/50">
                   Preview · {student.name}
                 </p>
-                <StatusPill tone={bulk === "done" ? "success" : "neutral"}>{bulk === "done" ? "Queued" : "Live"}</StatusPill>
+                <StatusPill tone="neutral">Live</StatusPill>
               </div>
               <div
                 className={

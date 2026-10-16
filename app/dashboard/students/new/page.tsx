@@ -20,6 +20,7 @@ export default function NewStudentPage() {
     checking: false,
     exists: false,
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [form, setForm] = useState({
     name: "",
     roll_number: "",
@@ -64,6 +65,10 @@ export default function NewStudentPage() {
     setError("");
     if (!form.name.trim() || !form.class_id) {
       setError("Name and class are required.");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("You must accept the Terms of Service and Privacy Policy.");
       return;
     }
     if (form.admission_number.trim()) {
@@ -230,6 +235,37 @@ export default function NewStudentPage() {
                 alt="Student photo"
               />
             </Field>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="accent-teal-600 w-4 h-4 mt-0.5 focus:ring-2 focus:ring-teal-600 focus:ring-offset-1 focus:ring-offset-slate-50"
+            />
+            <label
+              htmlFor="terms"
+              className="text-xs text-slate-600 leading-tight cursor-pointer"
+            >
+              I have read and agree to the{" "}
+              <Link
+                href="/terms-of-service"
+                className="text-teal-600 hover:underline font-medium"
+              >
+                Terms of Service
+              </Link>
+              {" "}
+              and{" "}
+              <Link
+                href="/privacy-policy"
+                className="text-teal-600 hover:underline font-medium"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </label>
           </div>
 
           {error && (
