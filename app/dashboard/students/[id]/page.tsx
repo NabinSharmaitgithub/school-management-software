@@ -121,7 +121,7 @@ export default function StudentProfilePage() {
           </Link>
           <div className="flex items-center gap-3">
             {student.photo_url ? (
-              <img src={student.photo_url} alt={student.name} className="h-12 w-12 rounded-full object-cover border border-e2e8f0 bg-slate-50 shrink-0" />
+              <img src={student.photo_url} alt={student.name} className="h-12 w-12 rounded-full object-cover border border-slate-200 bg-slate-50 shrink-0" />
             ) : (
               <span className="h-12 w-12 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-semibold text-sm shrink-0">
                 {student.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
@@ -310,7 +310,7 @@ export default function StudentProfilePage() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-e2e8f0 last:border-0">
+    <div className="flex items-center justify-between py-2.5 border-b border-slate-200 last:border-0">
       <span className="text-sm text-slate-500">{label}</span>
       <span className="text-sm font-medium text-slate-900 text-right">{value}</span>
     </div>
