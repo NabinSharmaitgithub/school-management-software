@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { listSubjects, teacherRoles } from "@/lib/data";
-import type { TeacherRoles } from "@/lib/data";
+import { getUserByEmail, listSubjects, teacherRoles } from "@/lib/data";
+import type { TeacherRoles, UserRole } from "@/lib/data";
 
 export type TeacherScope = TeacherRoles & {
   email: string | null;
@@ -26,7 +26,7 @@ export function useAuthEmail(): string | null {
 
 /**
  * Resolved access for the signed-in user.
- * - Admin (admin@school.local): isAdmin = true, unrestricted.
+ * - Users with role "Admin" (stored in users/{email}): isAdmin = true, unrestricted.
  * - Everyone else: classIds (classes they manage as class teacher) and
  *   subjectByClass (subject teaching scope). Wait for `ready` before rendering.
  */
@@ -44,16 +44,25 @@ export function useTeacherScope(): TeacherScope {
       setScope((s) => ({ ...s, email: null, ready: true }));
       return;
     }
-    if (email === "admin@school.local") {
-      setScope((s) => ({ ...s, email, isAdmin: true, ready: true, ...EMPTY }));
-      return;
-    }
-    listSubjects()
-      .then((subs) => teacherRoles(email, subs))
-      .then((roles) =>
-        setScope({ ...roles, email, isAdmin: false, ready: true })
-      )
-      .catch(() => setScope((s) => ({ ...s, email, isAdmin: false, ready: true, ...EMPTY })));
+    // Resolve role from Firestore users/{email} record (set at login via ensureUser).
+    getUserByEmail(email)
+      .then((u) => {
+        const role = (u?.role as UserRole) ?? null;
+        if (role === "Admin") {
+          setScope((s) => ({ ...s, email, isAdmin: true, ready: true, ...EMPTY }));
+          return;
+        }
+        return listSubjects().then((subs) => teacherRoles(email, subs));
+      })
+      .then((roles) => {
+        // Only reached for non-admin users: apply class/subject scope.
+        if (roles) {
+          setScope((s) => ({ ...roles, email, isAdmin: false, ready: true }));
+        }
+      })
+      .catch(() =>
+        setScope((s) => ({ ...s, email, isAdmin: false, ready: true, ...EMPTY }))
+      );
   }, [email]);
 
   return scope;
