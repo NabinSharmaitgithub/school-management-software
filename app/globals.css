@@ -32,11 +32,11 @@
 /* Backward-compatible glassmorphism classes using the new teal design system */
 @layer components {
   .glass-panel {
-    @apply bg-white border border-e2e8f0 rounded-lg shadow-sm;
+    @apply bg-white border border-slate-200 rounded-lg shadow-sm;
   }
 
   .glass-input {
-    @apply bg-white border border-e2e8f0 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all duration-200;
+    @apply bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all duration-200;
   }
   .glass-input:focus {
     outline: none;
@@ -50,7 +50,7 @@
   }
 
   .glass-btn-ghost {
-    @apply bg-white border border-e2e8f0 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:opacity-60 disabled:cursor-not-allowed;
   }
   .glass-btn-ghost:hover {
     transform: translateY(-1px);
