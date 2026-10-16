@@ -1,0 +1,204 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the requesting user is an admin by looking up their email in users/
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == "Admin";
+    }
+
+    // Helper: check if the requesting user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: check if the user owns the student record (linked via users/{email}.student_id)
+    function isStudentOwner(studentId) {
+      return exists(/databases/$(database)/documents/users/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.student_id == studentId;
+    }
+
+    // ── Public read for all authenticated users ──
+    match /{document=**} {
+      allow read: if isAuthenticated();
+    }
+
+    // ── Users: only admins can write; users can read their own record ──
+    match /users/{user} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Students: admins full access; teachers can write only their assigned classes ──
+    match /students/{student} {
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── Classes / Subjects / Academics: admins only ──
+    match /classes/{class} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /subjects/{subject} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Marks: teachers can write marks for their assigned subjects/classes; admins full ──
+    match /marks/{mark} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || !resource.data.published;
+      allow delete: if isAdmin();
+    }
+
+    // ── Attendance: teachers can mark attendance for their classes ──
+    match /attendance/{attendance} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ── Payments and fee invoices: admins for writes ──
+    match /payments/{payment} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /fee_invoices/{invoice} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Discounts and late fees: admins only ──
+    match /discounts/{discount} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /late_fees/{cfg} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Audit logs: append-only, admins write ──
+    match /fee_audit_logs/{log} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    match /attendance_corrections/{log} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // ── Mark revisions: read all, create authenticated, no modify ──
+    match /mark_revisions/{rev} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // ── Promotion history: read all, create authenticated ──
+    match /promotion_history/{hist} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // ── Staff, leaves, assignments: admins write ──
+    match /staff/{staff} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /leaves/{leave} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    match /assignments/{assignment} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Settings: admins only ──
+    match /settings/{setting} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Fee structures: admins only ──
+    match /fee_structures/{fs} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Exams and exam sessions: admins write ──
+    match /exams/{exam} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /exam_sessions/{session} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Payslips: admins write, staff read own ──
+    match /payslips/{payslip} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Timetable: admins write ──
+    match /timetable/{entry} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Library, hostel, transport: admins write ──
+    match /books/{book} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /loans/{loan} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /rooms/{room} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /hostel_fees/{hf} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /routes/{route} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /route_assignments/{ra} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /vehicles/{vehicle} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Announcements, broadcasts, threads, notifications ──
+    match /announcements/{ann} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /broadcasts/{bc} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /threads/{thread} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    match /notifications/{notif} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

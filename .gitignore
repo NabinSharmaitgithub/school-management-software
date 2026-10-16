@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+next-env.d.ts
+*.tsbuildinfo
+stitch_school_management_system_glassmorphism/
+screens/
+STITCH_PROMPTS.md
+STITCH_STATUS.md
+stitch-prompts-school-management.mdresults.html
