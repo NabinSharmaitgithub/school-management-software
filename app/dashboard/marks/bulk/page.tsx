@@ -413,7 +413,7 @@ export default function BulkMarksPage() {
       </GlassCard>
 
       {savedMsg && (
-        <p className="text-xs text-success bg-emerald-50/70 border border-emerald-200 rounded-lg px-3 py-2">
+        <p className="text-xs text-success bg-success/10 border border-success/20 rounded-lg px-3 py-2">
           {savedMsg}
         </p>
       )}
