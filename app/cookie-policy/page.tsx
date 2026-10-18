@@ -97,7 +97,7 @@ export default function CookiePolicyPage() {
         </section>
 
         <footer className="mt-12 pt-8 border-t border-border text-sm text-slate-500">
-          Greenwood International School &middot; 123 Education Boulevard, Knowledge City
+          Google Academy Birgunj &middot; 123 Education Boulevard, Knowledge City
         </footer>
       </main>
     </div>

@@ -20,7 +20,7 @@ All fixes were applied and verified via static analysis + `npm run build` (clean
 | F8 | **New:** Certificate sub-pages used `useParams()` on static routes → `id` always `undefined` → "Student not found" from every entry point | Switched to query-string read (no Suspense wrapper needed) | Fixed ✓ |
 | F9 | **New:** Student dropdown in Documents never showed class names (`classOf` computed from unselected student) | Class name+section computed per option | Fixed ✓ |
 | F10 | **New:** Non-admin whose `users/{email}` read failed fell back to full Admin nav (fail-open) | Shell now fails closed to Student; dashboard renders only after role resolves, so admin-only pages never flash for restricted roles | Fixed ✓ |
-| F11 | **New:** Payslip modal hard-coded "Greenwood International School" and `रु` currency | Uses `getSchoolSettings()` school_name + currency symbol | Fixed ✓ |
+| F11 | **New:** Payslip modal hard-coded "Google Academy Birgunj" and `रु` currency | Uses `getSchoolSettings()` school_name + currency symbol | Fixed ✓ |
 | F12 | Attach button in messenger had no handler (BTN-139) | Disabled with title "Attachments coming soon" (matches the copy under it) | Fixed ✓ |
 | F13 | Dead `ModulePlaceholder` component with stale "coming soon" copy | Deleted (`components/dashboard/placeholder.tsx`) — zero references | Deleted ✓ |
 | F14 | `@next/next/no-img-element` warnings ×14 (print documents intentionally use `<img>`) | `.eslintrc.json` created with rule off for this codebase | Suppressed ✓ |
@@ -96,7 +96,7 @@ The original 230 BLOCKED dashboard controls have **not** been re-exercised in a 
 
 1. **No automated browser checks left in the repo.** If UI regression confidence is needed long-term, re-add a thin Playwright suite (setup + 5 smoke specs) — the earlier infra was removed cleanly and could be restored from git history.
 2. **Icon-only buttons are 32px** (`w-8 h-8`) — above the WCAG 2.2 AA minimum target size (24px) but below the 44px comfortable target; bump to `w-10 h-10` if touch device usage is heavy.
-3. **Footer school name is hard-coded** ("Greenwood International School") in `app/layout.tsx` while documents read it from settings; making the root footer dynamic requires an async server layout read — noted, not changed.
+3. **Footer school name is hard-coded** ("Google Academy Birgunj") in `app/layout.tsx` while documents read it from settings; making the root footer dynamic requires an async server layout read — noted, not changed.
 4. Single shared font link (`Inter`, Material Symbols) via `<link>` — fine for this deployment size; `next/font` would self-host if desired later.
 
 ---

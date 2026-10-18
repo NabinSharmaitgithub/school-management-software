@@ -39,7 +39,7 @@ export default function RootLayout({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="text-sm text-slate-500">
-                Greenwood International School &middot; 123 Education Boulevard, Knowledge City
+                Google Academy Birgunj &middot; 123 Education Boulevard, Knowledge City
               </div>
               <div className="flex gap-6 text-sm text-slate-500">
                 <Link

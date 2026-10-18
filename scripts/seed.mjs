@@ -433,7 +433,7 @@ async function main() {
 
   // Settings: school profile + fee structures.
   await writeDoc(token, "settings", "school", {
-    school_name: "Greenwood International School",
+    school_name: "Google Academy Birgunj",
     school_address: "123 Education Boulevard, Knowledge City",
     timezone: "(GMT+05:30) India Standard Time",
     currency: "INR (₹)",

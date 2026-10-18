@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-slate-900 mb-3">1. Introduction</h2>
           <p className="text-slate-700 mb-4">
-            Welcome to Greenwood International School&rsquo;s School Management System
+            Welcome to Google Academy Birgunj&rsquo;s School Management System
             (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our&rdquo;). We are committed to protecting your privacy.
             This Privacy Policy explains how we collect, use, disclose, and safeguard your
             information when you use our school management portal.
@@ -126,7 +126,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <footer className="mt-12 pt-8 border-t border-border text-sm text-slate-500">
-          Greenwood International School &middot; 123 Education Boulevard, Knowledge City
+          Google Academy Birgunj &middot; 123 Education Boulevard, Knowledge City
         </footer>
       </main>
     </div>

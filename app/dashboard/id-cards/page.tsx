@@ -187,7 +187,7 @@ export default function IdCardsPage() {
                     {settings?.logo_url ? (
                       <img src={settings.logo_url} alt="School logo" className={`h-8 object-contain ${style === "Modern" ? "" : "invert"}`} />
                     ) : (
-                      <p className={`font-bold tracking-wide truncate ${style === "Modern" ? "text-white" : "text-indigo-700"}`}>Greenwood International</p>
+                      <p className={`font-bold tracking-wide truncate ${style === "Modern" ? "text-white" : "text-indigo-700"}`}>Google Academy Birgunj</p>
                     )}
                     <p className={`text-[10px] ${style === "Modern" ? "text-white/80" : "text-grey-500"}`}>Student Identity Card</p>
                   </div>

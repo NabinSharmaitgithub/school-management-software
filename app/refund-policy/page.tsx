@@ -23,7 +23,7 @@ export default function RefundPolicyPage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-slate-900 mb-3">1. Policy Overview</h2>
           <p className="text-slate-700 mb-4">
-            Greenwood International School strives to provide clear and fair fee collection
+            Google Academy Birgunj strives to provide clear and fair fee collection
             practices. This Refund Policy explains how overpayments, duplicate payments, and
             withdrawals are handled.
           </p>
@@ -110,7 +110,7 @@ export default function RefundPolicyPage() {
         </section>
 
         <footer className="mt-12 pt-8 border-t border-border text-sm text-slate-500">
-          Greenwood International School &middot; 123 Education Boulevard, Knowledge City
+          Google Academy Birgunj &middot; 123 Education Boulevard, Knowledge City
         </footer>
       </main>
     </div>

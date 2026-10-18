@@ -1489,7 +1489,7 @@ export async function logService(vehicleId: string, service: VehicleService) {
 }
 
 const SETTINGS_DEFAULTS: Omit<SchoolSettings, "id"> = {
-  school_name: "Greenwood International School",
+  school_name: "Google Academy Birgunj",
   school_address: "123 Education Boulevard, Knowledge City",
   timezone: "(GMT+05:30) India Standard Time",
   currency: "NPR (रु)",

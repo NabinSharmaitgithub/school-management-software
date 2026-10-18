@@ -23,7 +23,7 @@ export default function TermsOfServicePage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-slate-900 mb-3">1. Acceptance of Terms</h2>
           <p className="text-slate-700 mb-4">
-            By accessing and using the Greenwood International School Management System
+            By accessing and using the Google Academy Birgunj Management System
             (&ldquo;the Portal&rdquo;), you agree to be bound by these Terms of Service. If you do
             not agree, you may not use the Portal.
           </p>
@@ -33,7 +33,7 @@ export default function TermsOfServicePage() {
           <h2 className="text-xl font-semibold text-slate-900 mb-3">2. Eligibility</h2>
           <p className="text-slate-700 mb-4">
             The Portal is intended for use by students, parents, staff, and administrators of
-            Greenwood International School. Users must have a valid account issued by the
+            Google Academy Birgunj. Users must have a valid account issued by the
             school administration to access the Portal.
           </p>
         </section>
@@ -79,7 +79,7 @@ export default function TermsOfServicePage() {
           <h2 className="text-xl font-semibold text-slate-900 mb-3">6. Intellectual Property</h2>
           <p className="text-slate-700 mb-4">
             All content on the Portal, including text, graphics, logos, and software, is the
-            property of Greenwood International School or its content suppliers and is
+            property of Google Academy Birgunj or its content suppliers and is
             protected by copyright and trademark laws.
           </p>
         </section>
@@ -97,7 +97,7 @@ export default function TermsOfServicePage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-slate-900 mb-3">8. Limitation of Liability</h2>
           <p className="text-slate-700 mb-4">
-            To the fullest extent permitted by law, Greenwood International School shall not
+            To the fullest extent permitted by law, Google Academy Birgunj shall not
             be liable for any indirect, incidental, special, consequential, or punitive
             damages, or any loss of profits or revenue, whether incurred directly or
             indirectly, in connection with the Portal.
@@ -117,7 +117,7 @@ export default function TermsOfServicePage() {
           <h2 className="text-xl font-semibold text-slate-900 mb-3">10. Governing Law</h2>
           <p className="text-slate-700 mb-4">
             These Terms shall be governed by and construed in accordance with the laws of the
-            jurisdiction in which Greenwood International School is located, without regard to
+            jurisdiction in which Google Academy Birgunj is located, without regard to
             its conflict of law provisions.
           </p>
         </section>
@@ -138,7 +138,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <footer className="mt-12 pt-8 border-t border-border text-sm text-slate-500">
-          Greenwood International School &middot; 123 Education Boulevard, Knowledge City
+          Google Academy Birgunj &middot; 123 Education Boulevard, Knowledge City
         </footer>
       </main>
     </div>
