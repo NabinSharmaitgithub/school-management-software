@@ -17,6 +17,17 @@
   :root {
     --foreground: 226 64% 12%;
     --skeleton: hsl(0, 0%, 90%);
+    /* rgb channels for inline alpha (Ripple ring color in the sign-in blocks) */
+    --rgb-foreground: 15 23 42;
+    /* Google button border token */
+    --btn-border: hsl(214, 32%, 91%);
+  }
+}
+
+@layer components {
+  .g-button {
+    @apply rounded-[0.5rem] border;
+    border-color: var(--btn-border);
   }
 }
 
