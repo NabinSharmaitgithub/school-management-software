@@ -249,13 +249,13 @@ export default function DashboardPage() {
               <>
                 <Link href="/dashboard/students/new">
                   <Button variant="ghost" className="w-full text-left text-slate-600 hover:bg-teal-50">
-                    <span className="material-symbols-outlined text-lg mr-2">add</span>
+                    <span className="material-symbols-outlined text-lg mr-2 text-white">add</span>
                     Admit Student
                   </Button>
                 </Link>
                 <Link href="/dashboard/finance">
                   <Button variant="ghost" className="w-full text-left text-slate-600 hover:bg-teal-50">
-                    <span className="material-symbols-outlined text-lg mr-2">payments</span>
+                    <span className="material-symbols-outlined text-lg mr-2 text-white">payments</span>
                     Collect Fee
                   </Button>
                 </Link>
@@ -263,13 +263,13 @@ export default function DashboardPage() {
             )}
             <Link href="/dashboard/attendance">
               <Button variant="ghost" className="w-full text-left text-slate-600 hover:bg-teal-50">
-                <span className="material-symbols-outlined text-lg mr-2">event_available</span>
+                <span className="material-symbols-outlined text-lg mr-2 text-white">event_available</span>
                 Mark Attendance
               </Button>
             </Link>
             <Link href="/dashboard/marks">
               <Button variant="ghost" className="w-full text-left text-slate-600 hover:bg-teal-50">
-                <span className="material-symbols-outlined text-lg mr-2">assignment</span>
+                <span className="material-symbols-outlined text-lg mr-2 text-white">assignment</span>
                 Enter Marks
               </Button>
             </Link>
