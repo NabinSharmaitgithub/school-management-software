@@ -128,7 +128,7 @@ export function PhotoUpload({ value, onFile, alt }: { value: string; onFile: (fi
 }
 
 export function StatCard({ icon, label, value, sub, tone = "primary" }: { icon: string; label: string; value: string; sub?: string; tone?: "primary" | "success" | "warning" | "error" | "neutral" }) {
-  const toneCls: Record<string, string> = { primary: "bg-primary text-white", success: "text-emerald-700 bg-emerald-50", warning: "text-amber-700 bg-amber-50", error: "text-rose-700 bg-rose-50", neutral: "text-slate-600 bg-slate-100" };
+  const toneCls: Record<string, string> = { primary: "bg-primary text-white", success: "bg-primary text-white", warning: "text-amber-700 bg-amber-50", error: "text-rose-700 bg-rose-50", neutral: "text-slate-600 bg-slate-100" };
   return (
     <div className={cn(CARD, "p-5 flex flex-col gap-3")}>
       <div className={cn("w-10 h-10 rounded-lg grid place-items-center", toneCls[tone])}><span className="material-symbols-outlined text-lg" aria-hidden="true">{icon}</span></div>
