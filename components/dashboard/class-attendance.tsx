@@ -164,7 +164,7 @@ function StudentRow({ idx, student, status, original, onStatus }: { idx: number;
       </div>
       <div className="flex gap-1">
         {(["present", "late", "absent"] as Status[]).map((st) => (
-          <button key={st} type="button" onClick={() => onStatus(st)} className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-all ${status === st ? st === "present" ? "bg-emerald-50 text-emerald-700 font-semibold" : st === "late" ? "bg-amber-50 text-amber-700 font-semibold" : "bg-rose-50 text-rose-700 font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"} ${changed ? "ring-1 ring-teal-500" : ""}`}>{st}</button>
+          <button key={st} type="button" onClick={() => onStatus(st)} className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-all ${status === st ? st === "present" ? "bg-emerald-600 text-white font-semibold" : st === "late" ? "bg-slate-500 text-white font-semibold" : "bg-rose-600 text-white font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"} ${changed ? "ring-1 ring-teal-500" : ""}`}>{st}</button>
         ))}
       </div>
     </div>
