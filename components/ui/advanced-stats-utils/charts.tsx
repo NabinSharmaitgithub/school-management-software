@@ -20,6 +20,7 @@ type TrendPoint = { label: string; pct: number };
 
 const chartConfig = {
   present: { label: 'Present %', color: 'var(--chart-1)' },
+  absent: { label: 'Absent %', color: 'var(--chart-2)' },
 } satisfies ChartConfig;
 
 export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
@@ -32,8 +33,10 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
   }, []);
 
   const points = data.length ? data : [{ label: '', pct: 0 }];
-  const avg = points.length
-    ? Math.round(points.reduce((sum, p) => sum + p.pct, 0) / points.length)
+  // Absent % is the complement of the live present % (100 - present)
+  const rows = points.map((p) => ({ label: p.label, present: p.pct, absent: 100 - p.pct }));
+  const avg = rows.length
+    ? Math.round(rows.reduce((sum, p) => sum + p.present, 0) / rows.length)
     : 0;
 
   return (
@@ -64,7 +67,7 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
           config={chartConfig}
           className="aspect-auto h-[280px] w-full"
         >
-          <AreaChart data={points} margin={{ left: 12, right: 12, top: 12 }}>
+          <AreaChart data={rows} margin={{ left: 12, right: 12, top: 12 }}>
             <defs>
               <linearGradient id={`${gradientId}-present`} x1="0" y1="0" x2="0" y2="1">
                 <stop
@@ -75,6 +78,18 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
                 <stop
                   offset="95%"
                   stopColor="var(--color-present)"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+              <linearGradient id={`${gradientId}-absent`} x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-absent)"
+                  stopOpacity={0.25}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-absent)"
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -92,12 +107,23 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
             />
             <ChartLegend content={<ChartLegendContent />} />
             <Area
-              dataKey="pct"
+              dataKey="absent"
+              name="absent"
+              type="natural"
+              fill={`url(#${gradientId}-absent)`}
+              stroke="var(--color-absent)"
+              strokeWidth={2}
+              stackId="a"
+              isAnimationActive={false}
+            />
+            <Area
+              dataKey="present"
               name="present"
               type="natural"
               fill={`url(#${gradientId}-present)`}
               stroke="var(--color-present)"
               strokeWidth={2.5}
+              stackId="a"
               isAnimationActive={false}
             />
           </AreaChart>
