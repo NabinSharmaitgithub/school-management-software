@@ -288,7 +288,7 @@ export default function LoginPage() {
       {/* Left Side */}
       <span className='relative flex flex-col justify-center w-1/2 max-lg:hidden'>
         <Ripple mainCircleSize={100} />
-        <TechOrbitDisplay iconsArray={iconsArray} />
+        <TechOrbitDisplay text='Academix' iconsArray={iconsArray} />
       </span>
 
       {/* Right Side */}
