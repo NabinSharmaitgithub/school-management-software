@@ -16,11 +16,11 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-type TrendPoint = { label: string; pct: number };
+type TrendPoint = { label: string; present: number; absent: number };
 
 const chartConfig = {
-  present: { label: 'Present %', color: 'var(--chart-1)' },
-  absent: { label: 'Absent %', color: 'var(--chart-2)' },
+  present: { label: 'Present', color: 'var(--chart-1)' },
+  absent: { label: 'Absent', color: 'var(--chart-2)' },
 } satisfies ChartConfig;
 
 export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
@@ -32,11 +32,11 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
     return () => clearTimeout(timeout);
   }, []);
 
-  const points = data.length ? data : [{ label: '', pct: 0 }];
-  // Absent % is the complement of the live present % (100 - present)
-  const rows = points.map((p) => ({ label: p.label, present: p.pct, absent: 100 - p.pct }));
-  const avg = rows.length
-    ? Math.round(rows.reduce((sum, p) => sum + p.present, 0) / rows.length)
+  const rows = data.length ? data : [{ label: '', present: 0, absent: 0 }];
+  // Average present per day, counted only over days with a recorded register
+  const recorded = rows.filter((r) => r.present || r.absent);
+  const avg = recorded.length
+    ? Math.round(recorded.reduce((sum, r) => sum + r.present, 0) / recorded.length)
     : 0;
 
   return (
@@ -48,10 +48,10 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
           </p>
           <div className="flex items-baseline gap-2">
             <h3 className="text-3xl font-bold tracking-tight text-slate-900">
-              {avg}%
+              {avg}
             </h3>
             <span className="text-sm font-medium text-muted">
-              7-day average
+              avg present/day · {recorded.length}/7 days recorded
             </span>
           </div>
         </div>
@@ -103,7 +103,7 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent formatter={(value) => `${Number(value)}%`} />}
+              content={<ChartTooltipContent />}
             />
             <ChartLegend content={<ChartLegendContent />} />
             <Area

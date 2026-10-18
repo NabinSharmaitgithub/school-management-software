@@ -49,7 +49,7 @@ export default function DashboardPage() {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [role, setRole] = useState<string | null>(null);
   const [stats, setStats] = useState<DashStats | null>(null);
-  const [attTrend, setAttTrend] = useState<{ date: string; label: string; pct: number }[]>([]);
+  const [attTrend, setAttTrend] = useState<{ date: string; label: string; pct: number; present: number; absent: number }[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [error, setError] = useState("");
 
@@ -86,15 +86,22 @@ export default function DashboardPage() {
           arr.push(a);
           byDate.set(a.date, arr);
         }
-        const trend: { date: string; label: string; pct: number }[] = [];
+        type TrendPoint = { date: string; label: string; pct: number; present: number; absent: number };
+        const trend: TrendPoint[] = [];
         for (let i = 6; i >= 0; i--) {
           const d = new Date(today.getTime() - i * 86400000).toISOString().slice(0, 10);
           const day = byDate.get(d);
           if (day && day.length) {
             const present = day.filter((a) => a.status !== "absent").length;
-            trend.push({ date: d, label: d.slice(5), pct: Math.round((present / day.length) * 100) });
+            trend.push({
+              date: d,
+              label: d.slice(5),
+              pct: Math.round((present / day.length) * 100),
+              present,
+              absent: day.length - present,
+            });
           } else {
-            trend.push({ date: d, label: d.slice(5), pct: 0 });
+            trend.push({ date: d, label: d.slice(5), pct: 0, present: 0, absent: 0 });
           }
         }
 
