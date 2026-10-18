@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { listClasses, listSubjects, addClass, updateClass, deleteClass, addSubject, updateSubject, deleteSubject } from "@/lib/data";
 import { Field, GlassButton, GlassCard, Input, Modal } from "@/components/ui";
 
-type Class = { id: string; name: string; section: string };
+type Class = { id: string; name: string; section: string; subjectIds?: string[] };
 type Subject = { id: string; name: string; code?: string; description?: string };
 
 export default function AcademicsPage() {
@@ -51,6 +51,7 @@ export default function AcademicsPage() {
       {tab === "classes" ? (
         <ClassesTable
           classes={classes}
+          subjects={subjects}
           loading={loading}
           onChanged={load}
         />
@@ -67,10 +68,12 @@ export default function AcademicsPage() {
 
 function ClassesTable({
   classes,
+  subjects,
   loading,
   onChanged,
 }: {
   classes: Class[];
+  subjects: Subject[];
   loading: boolean;
   onChanged: () => void;
 }) {
@@ -79,13 +82,19 @@ function ClassesTable({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", section: "" });
+  const [subjectIds, setSubjectIds] = useState<string[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
 
   function open(entry?: Class) {
     setEditId(entry?.id ?? null);
     setForm({ name: entry?.name ?? "", section: entry?.section ?? "" });
+    setSubjectIds(entry?.subjectIds ?? []);
     setError("");
     setModal(entry ? "edit" : "new");
+  }
+
+  function toggleSubject(id: string) {
+    setSubjectIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   }
 
   async function save(e: React.FormEvent) {
@@ -98,9 +107,9 @@ function ClassesTable({
     setSaving(true);
     try {
       if (editId) {
-        await updateClass(editId, { name: form.name.trim(), section: form.section.trim() });
+        await updateClass(editId, { name: form.name.trim(), section: form.section.trim(), subjectIds });
       } else {
-        await addClass({ name: form.name.trim(), section: form.section.trim() });
+        await addClass({ name: form.name.trim(), section: form.section.trim(), subjectIds });
       }
       setModal(null);
       onChanged();
@@ -134,11 +143,12 @@ function ClassesTable({
         <p className="text-sm text-on-surface/60 py-8 text-center">No classes yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-on-surface/50">
                 <th className="pb-3 pr-4">Class</th>
                 <th className="pb-3 pr-4">Section</th>
+                <th className="pb-3 pr-4">Assigned subjects</th>
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -147,6 +157,11 @@ function ClassesTable({
                 <tr key={c.id} className="border-t border-on-surface/10 hover:bg-slate-50">
                   <td className="py-3 pr-4 font-medium">{c.name}</td>
                   <td className="py-3 pr-4 text-on-surface/70">{c.section}</td>
+                  <td className="py-3 pr-4 text-on-surface/70">
+                    {c.subjectIds?.length
+                      ? c.subjectIds.map((id) => subjects.find((s) => s.id === id)?.name ?? id).join(", ")
+                      : <span className="text-on-surface/50">All subjects (not restricted)</span>}
+                  </td>
                   <td className="py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => open(c)} className="glass-btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/60 hover:text-primary" aria-label="Edit">
@@ -185,6 +200,27 @@ function ClassesTable({
               onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
               required
             />
+          </Field>
+          <Field label="Assigned subjects (leave empty to allow every subject)">
+            <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto border border-slate-200 rounded-lg p-3">
+              {subjects.length === 0 ? (
+                <p className="col-span-2 text-xs text-on-surface/50">
+                  No subjects defined yet — add them in the Subjects tab.
+                </p>
+              ) : (
+                subjects.map((s) => (
+                  <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer min-w-0">
+                    <input
+                      type="checkbox"
+                      className="accent-teal-700 shrink-0"
+                      checked={subjectIds.includes(s.id)}
+                      onChange={() => toggleSubject(s.id)}
+                    />
+                    <span className="truncate">{s.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
           </Field>
           {error && (
             <p className="text-xs text-error bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">

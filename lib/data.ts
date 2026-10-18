@@ -43,6 +43,8 @@ export type Class = {
   id: string;
   name: string;
   section: string;
+  /** Subjects taught in this class (admin-curated). Unset/empty = every school subject applies. */
+  subjectIds?: string[];
 };
 
 export type Subject = {
@@ -1874,12 +1876,14 @@ export async function assignmentsFor(email: string): Promise<Assignment[]> {
 
 /**
  * Resolve a teacher's access from their assignments.
- * Class teachers manage the whole class (marks for every subject), so their class
- * gets every subject listed in `allSubjects`.
+ * Subject teachers manage their assigned class×subject pairs. Class teachers manage
+ * the whole class: the subjects assigned to it (`Class.subjectIds`), or every school
+ * subject when the class has no subject assignment configured.
  */
 export async function teacherRoles(
   email: string,
-  allSubjects: Subject[] = []
+  allSubjects: Subject[] = [],
+  classes: Class[] = []
 ): Promise<TeacherRoles> {
   const all = await assignmentsFor(email);
   const classIds: string[] = [];
@@ -1887,7 +1891,8 @@ export async function teacherRoles(
   for (const a of all) {
     if (a.type === "class_teacher") {
       if (!classIds.includes(a.class_id)) classIds.push(a.class_id);
-      subjectByClass[a.class_id] = allSubjects.map((s) => s.id) ?? [];
+      const assigned = classes.find((c) => c.id === a.class_id)?.subjectIds;
+      subjectByClass[a.class_id] = assigned?.length ? assigned : allSubjects.map((s) => s.id);
     } else if (a.type === "subject_teacher" && a.subject_id) {
       if (!subjectByClass[a.class_id]) subjectByClass[a.class_id] = [];
       if (!subjectByClass[a.class_id].includes(a.subject_id)) {

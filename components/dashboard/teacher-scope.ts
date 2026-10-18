@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserByEmail, listSubjects, teacherRoles } from "@/lib/data";
+import { getUserByEmail, listClasses, listSubjects, teacherRoles } from "@/lib/data";
 import type { TeacherRoles, UserRole } from "@/lib/data";
 
 export type TeacherScope = TeacherRoles & {
@@ -52,7 +52,9 @@ export function useTeacherScope(): TeacherScope {
           setScope((s) => ({ ...s, email, isAdmin: true, ready: true, ...EMPTY }));
           return;
         }
-        return listSubjects().then((subs) => teacherRoles(email, subs));
+        return Promise.all([listClasses(), listSubjects()]).then(([cls, subs]) =>
+          teacherRoles(email, subs, cls)
+        );
       })
       .then((roles) => {
         // Only reached for non-admin users: apply class/subject scope.
