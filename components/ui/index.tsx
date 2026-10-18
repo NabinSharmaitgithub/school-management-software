@@ -19,7 +19,7 @@ export function Button({ variant = "primary", className, children, ...props }: R
 }
 
 export function StatusPill({ tone = "neutral", children }: { tone?: "success" | "warning" | "error" | "primary" | "neutral"; children: React.ReactNode }) {
-  const tones: Record<string, string> = { success: "text-emerald-700 bg-emerald-100 border border-emerald-200", warning: "text-amber-700 bg-amber-100 border border-amber-200", error: "text-rose-700 bg-rose-100 border border-rose-200", primary: "text-primary bg-primary/100 border border-primary/200", neutral: "text-slate-600 bg-slate-100 border border-slate-200" };
+  const tones: Record<string, string> = { success: "text-emerald-700 bg-emerald-100 border border-emerald-200", warning: "text-amber-700 bg-amber-100 border border-amber-200", error: "text-rose-700 bg-rose-100 border border-rose-200", primary: "text-white bg-primary border border-primary", neutral: "text-slate-600 bg-slate-100 border border-slate-200" };
   return <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border", tones[tone])}>{children}</span>;
 }
 
