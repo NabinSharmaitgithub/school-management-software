@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   listStudents,
   listClasses,
@@ -14,6 +14,8 @@ import {
 } from "@/lib/data";
 import type { AttendanceEntry, Announcement, FeeInvoice } from "@/lib/data";
 import { useTeacherScope } from "@/components/dashboard/teacher-scope";
+import { ClippedAreaChart } from "@/components/ui/advanced-stats-utils/charts";
+import { TimelineAnimation } from "@/components/ui/timeline-animation";
 import {
   StatCard,
   Card,
@@ -44,6 +46,7 @@ const CURR = (n: number) =>
 
 export default function DashboardPage() {
   const scope = useTeacherScope();
+  const timelineRef = useRef<HTMLDivElement>(null);
   const [role, setRole] = useState<string | null>(null);
   const [stats, setStats] = useState<DashStats | null>(null);
   const [attTrend, setAttTrend] = useState<{ date: string; label: string; pct: number }[]>([]);
@@ -221,26 +224,16 @@ export default function DashboardPage() {
         <StatCard icon="event_note" label="My Attendance (Month)" value={`${stats.myAtt.present}/${stats.myAtt.total} days`} tone="primary" />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 card p-6">
-          <h2 className="font-semibold text-slate-900 mb-4 text-sm">Attendance — Last 7 Days</h2>
-          <div className="h-64 flex items-end gap-2">
-            {attTrend.length ? (
-              attTrend.map((day, i) => (
-                <div key={day.date} className="flex-1 h-full flex flex-col justify-end gap-1 text-center">
-                  <div
-                    className="w-full rounded-t-md transition-all min-h-[2px]"
-                    title={`${day.label}: ${day.pct}%`}
-                    style={{ height: `${Math.max(day.pct, 2)}%`, background: "linear-gradient(135deg,#0F766E,#14B8A6)", opacity: 0.4 + (day.pct / 100) * 0.6 }}
-                  />
-                  <span className="text-[10px] text-slate-500">{day.label.slice(3)}</span>
-                </div>
-              ))
-            ) : (
-              <div className="flex-1 text-center text-slate-400 text-sm self-center">No data</div>
-            )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" ref={timelineRef}>
+        <TimelineAnimation
+          animationNum={1}
+          timelineRef={timelineRef}
+          className="lg:col-span-2"
+        >
+          <div className="card p-6">
+            <ClippedAreaChart data={attTrend} />
           </div>
-        </div>
+        </TimelineAnimation>
 
         <div className="lg:col-span-1 card p-6">
           <h2 className="font-semibold text-slate-900 mb-4 text-sm">Quick Actions</h2>
