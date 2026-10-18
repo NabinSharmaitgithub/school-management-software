@@ -22,7 +22,7 @@ export default function MarksPage() {
   const [marks, setMarks] = useState<Mark[]>([]);
   const [students, setStudents] = useState<Record<string, string>>({});
   const [studentClass, setStudentClass] = useState<Record<string, string>>({});
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string; subjectIds?: string[] }[]>([]);
   const [subjects, setSubjects] = useState<Record<string, string>>({});
   const [exams, setExams] = useState<{ id: string; name: string; academic_year: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +122,12 @@ export default function MarksPage() {
     .filter(([id]) => !form.class_id || studentClass[id] === form.class_id)
     .sort((a, b) => a[1].localeCompare(b[1]))
     .map(([id, name]) => ({ id, name }));
+  // Class-level subject assignment: only enforced in the marks-entry screens
   const subjectOptions = Object.entries(subjects)
+    .filter(([id]) => {
+      const assigned = classes.find((c) => c.id === form.class_id)?.subjectIds;
+      return !assigned?.length || assigned.includes(id);
+    })
     .sort((a, b) => a[1].localeCompare(b[1]))
     .map(([id, name]) => ({ id, name }));
 

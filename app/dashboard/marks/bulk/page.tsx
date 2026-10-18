@@ -94,13 +94,14 @@ export default function BulkMarksPage() {
     [classes, grade, section]
   );
 
-  const visibleSubjects = useMemo(
-    () =>
-      scope.isAdmin
-        ? subjects
-        : subjects.filter((sub) => scope.subjectByClass[classId]?.includes(sub.id)),
-    [subjects, scope, classId]
-  );
+  const visibleSubjects = useMemo(() => {
+    const base = scope.isAdmin
+      ? subjects
+      : subjects.filter((sub) => scope.subjectByClass[classId]?.includes(sub.id));
+    // Class-level subject assignment: only enforced in the marks-entry screens
+    const assigned = classes.find((x) => x.id === classId)?.subjectIds;
+    return assigned?.length ? base.filter((sub) => assigned.includes(sub.id)) : base;
+  }, [subjects, scope, classId, classes]);
 
   useEffect(() => {
     const ok = visibleSubjects.some((s) => s.id === subjectId);
