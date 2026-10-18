@@ -11,6 +11,13 @@
     color: #0f172a;
     -webkit-font-smoothing: antialiased;
   }
+  /* Tokens for the animated sign-in component.
+     --foreground uses raw HSL channels so Tailwind opacity modifiers
+     (e.g. bg-foreground/15) compile correctly. */
+  :root {
+    --foreground: 226 64% 12%;
+    --skeleton: hsl(0, 0%, 90%);
+  }
 }
 
 /* Scrollbar styling for consistent tables */

@@ -3,11 +3,39 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  GraduationCap,
+  BookOpen,
+  Users,
+  CalendarDays,
+  ClipboardList,
+  Library,
+  Bus,
+  Wallet,
+  BarChart3,
+} from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { ensureUser } from "@/lib/data";
-import { GlassButton, Input, Field, Alert } from "@/components/ui";
+import {
+  Ripple,
+  TechOrbitDisplay,
+  AnimatedForm,
+} from "@/components/ui/modern-animated-sign-in";
 
 const ROLES = ["Admin", "Teacher", "Student", "Parent"] as const;
+
+// Orbiting module icons (lucide = local SVGs, no remote image loading)
+const iconsArray = [
+  { component: () => <GraduationCap className="text-primary size-8" />, className: "border-none bg-transparent", duration: 20, delay: 20, radius: 100, path: false, reverse: false },
+  { component: () => <BookOpen className="text-primary size-8" />, className: "border-none bg-transparent", duration: 20, delay: 10, radius: 100, path: false, reverse: false },
+  { component: () => <Wallet className="text-tertiary size-8" />, className: "border-none bg-transparent", duration: 20, delay: 20, radius: 100, path: false, reverse: false },
+  { component: () => <ClipboardList className="text-primary size-7" />, className: "border-none bg-transparent", duration: 20, delay: 0, radius: 210, path: false, reverse: false },
+  { component: () => <CalendarDays className="text-tertiary size-7" />, className: "border-none bg-transparent", duration: 20, delay: 20, radius: 210, path: false, reverse: false },
+  { component: () => <Users className="text-primary size-7" />, className: "border-none bg-transparent", duration: 20, delay: 10, radius: 210, path: false, reverse: false },
+  { component: () => <Library className="text-tertiary size-8" />, className: "border-none bg-transparent", duration: 20, delay: 10, radius: 150, path: false, reverse: true },
+  { component: () => <Bus className="text-primary size-8" />, className: "border-none bg-transparent", duration: 20, delay: 0, radius: 150, path: false, reverse: true },
+  { component: () => <BarChart3 className="text-primary size-6" />, className: "border-none bg-transparent", duration: 20, delay: 0, radius: 270, path: false, reverse: true },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,41 +44,20 @@ export default function LoginPage() {
   const [role, setRole] = useState<(typeof ROLES)[number]>("Student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function validateEmail(email: string) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    
-    if (!email.trim()) {
-      setError("Email is required.");
-      return;
-    }
-    
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-    
-    if (!password) {
-      setError("Password is required.");
-      return;
-    }
-
     setLoading(true);
     try {
       if (!auth) {
         setError("Authentication service unavailable. Please try again.");
         return;
       }
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
       await ensureUser(email.trim(), role);
       router.push("/dashboard");
     } catch (err: unknown) {
@@ -69,124 +76,86 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <main className="relative min-h-screen flex items-center justify-center p-4">
-      <div className="ambient-bg">
-        <div className="ambient-blob blob-1" />
-        <div className="ambient-blob blob-2" />
-        <div className="ambient-blob blob-3" />
-      </div>
-
-      <div className="w-full max-w-[420px] relative z-10">
-        <div className="glass-panel p-8">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-50 p-3 shadow-sm border border-slate-200 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-4xl">school</span>
-            </div>
-            <h1 className="text-2xl font-semibold text-on-surface mb-2 tracking-tight">
-              Welcome Back
-            </h1>
-            <p className="text-sm text-on-surface/70">Sign in to Academix Portal</p>
-          </div>
-
-          <div className="flex p-1 bg-slate-50 rounded-full mb-8 border border-slate-200" role="radiogroup" aria-label="Select role">
-            {ROLES.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                role="radio"
-                aria-checked={role === r}
-                className={`flex-1 py-1.5 px-3 rounded-full text-xs transition-all ${
-                  role === r
-                    ? "bg-primary text-white font-semibold shadow-md"
-                    : "font-medium text-on-surface/80 hover:bg-slate-100"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <Field label="Email or Username">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40 material-symbols-outlined text-xl">person</span>
-                <Input
-                  id="email"
-                  type="text"
-                  className="pl-11"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  aria-describedby={error ? "email-error" : undefined}
-                />
-              </div>
-            </Field>
-
-            <Field label="Password">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40 material-symbols-outlined text-xl">lock</span>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  className="pl-11 pr-11"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  aria-describedby={error ? "password-error" : undefined}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface/40 hover:text-primary transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  aria-pressed={showPassword}
-                >
-                  <span className="material-symbols-outlined text-xl">{showPassword ? "visibility_off" : "visibility"}</span>
-                </button>
-              </div>
-            </Field>
-
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <span className="w-4 h-4 rounded border border-on-surface/30 bg-slate-50 peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center pointer-events-none">
-                  <span className="material-symbols-outlined text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">check</span>
-                </span>
-                <span className="text-xs text-on-surface/70">Remember me</span>
-              </label>
-              <a href="/forgot-password" className="text-xs font-medium text-primary hover:text-tertiary transition-colors underline-offset-2 hover:underline">
-                Forgot password?
-              </a>
-            </div>
-
-            {error && <Alert message={error} type="error" />}
-
-            <GlassButton
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg text-white font-semibold text-base mt-6 flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {loading ? "Signing in…" : "Sign In"}
-              {!loading && <span className="material-symbols-outlined text-xl">arrow_forward</span>}
-            </GlassButton>
-          </form>
-        </div>
-
-        <p className="text-center mt-6 text-xs text-on-surface/50">
-          Academix High © 2026
+  // Role chips + remember-me rendered inside the animated form
+  const extraEl = (
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm font-medium text-slate-700 mb-2">
+          I am signing in as <span className="text-red-500">*</span>
         </p>
+        <div className="grid grid-cols-2 gap-2">
+          {ROLES.map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRole(r)}
+              aria-pressed={role === r}
+              className={
+                role === r
+                  ? "h-10 rounded-md text-sm font-medium border bg-primary text-white border-primary hover:bg-primary-hover transition-colors"
+                  : "h-10 rounded-md text-sm font-medium border bg-white text-slate-600 border-slate-200 hover:border-teal-600 hover:text-teal-700 transition-colors"
+              }
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </div>
+      <label className="flex items-center gap-2.5 cursor-pointer select-none w-fit">
+        <input
+          type="checkbox"
+          checked={remember}
+          onChange={(e) => setRemember(e.target.checked)}
+          className="h-4 w-4 rounded border border-slate-300 accent-teal-600 focus-visible:ring-2 focus-visible:ring-teal-600"
+        />
+        <span className="text-sm text-slate-600">Keep me signed in</span>
+      </label>
+    </div>
+  );
+
+  return (
+    <main className="relative min-h-screen flex bg-background">
+      {/* Left: orbiting modules + ripple (desktop only) */}
+      <span className="relative hidden lg:flex flex-col justify-center w-1/2 overflow-hidden">
+        <Ripple mainCircleSize={100} className="bg-muted-bg" />
+        <TechOrbitDisplay iconsArray={iconsArray} text="Academix" />
+        <p className="absolute bottom-10 inset-x-0 text-center text-sm text-slate-500">
+          School Management System
+        </p>
+      </span>
+
+      {/* Right: sign-in form */}
+      <span className="w-full lg:w-1/2 min-h-[100dvh] flex flex-col justify-center items-center px-5 py-10 sm:px-[8%]">
+        <AnimatedForm
+          header="Welcome back"
+          subHeader="Sign in to your school account"
+          fields={[
+            {
+              label: "Email",
+              required: true,
+              type: "email",
+              placeholder: "you@school.edu",
+              autoComplete: "email",
+              onChange: (e) => setEmail(e.target.value),
+            },
+            {
+              label: "Password",
+              required: true,
+              type: "password",
+              placeholder: "Enter your password",
+              autoComplete: "current-password",
+              onChange: (e) => setPassword(e.target.value),
+            },
+          ]}
+          extra={extraEl}
+          submitButton={loading ? "Signing in…" : "Sign in"}
+          submitDisabled={loading}
+          errorField={error || undefined}
+          textVariantButton="Forgot password?"
+          goTo={() => router.push("/forgot-password")}
+          onSubmit={handleSubmit}
+        />
+      </span>
     </main>
   );
 }

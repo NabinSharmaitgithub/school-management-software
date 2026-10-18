@@ -43,6 +43,8 @@ The original 230 BLOCKED dashboard controls have **not** been re-exercised in a 
 
 ## I. UI/UX Audit and Repair (Full-Site Review)
 
+> **Login redesign (Oct 18 2026):** the home page (`app/page.tsx`) was rebuilt around an animated split-panel sign-in (`components/ui/modern-animated-sign-in.tsx`): orbiting module icons over a ripple backdrop on desktop, animated form reveal for fields/labels. Firebase email sign-in flow, role chips, remember-me, forgot-password link, and error mapping are unchanged. Verification is build/type-check/test only (no browser run).
+
 **Scope:** every route under `app/` (41 pages), all `components/`, `globals.css`, `tailwind.config.js`, and the design-system primitives in `components/ui/index.tsx`. Backend, Firebase rules, and business logic untouched.
 
 ### I.1 Systemic problems found (fixed once, at the system level)
