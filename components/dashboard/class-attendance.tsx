@@ -106,14 +106,14 @@ export function ClassAttendance({ classId }: { classId: string }) {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-slate-500 mr-1">Mark all:</span>
           {(["present", "late", "absent"] as Status[]).map((st) => (
-            <button key={st} type="button" onClick={() => onMarkAll(st)} className="px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors border border-slate-200 capitalize">
+            <button key={st} type="button" onClick={() => onMarkAll(st)} className="px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-teal hover:text-white transition-colors border border-slate-200 capitalize">
               {st}
             </button>
           ))}
         </div>
       )}
 
-      {error && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-xs text-rose bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-slate-50 border border-slate-200">
@@ -157,14 +157,14 @@ function StudentRow({ idx, student, status, original, onStatus }: { idx: number;
   const changed = status !== original;
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-slate-200">
-      <span className="w-8 h-8 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-semibold shrink-0">{idx + 1}</span>
+      <span className="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-semibold shrink-0">{idx + 1}</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-900 truncate">{student.name}</p>
         <p className="text-xs text-slate-500">{student.roll_number}</p>
       </div>
       <div className="flex gap-1">
         {(["present", "late", "absent"] as Status[]).map((st) => (
-          <button key={st} type="button" onClick={() => onStatus(st)} className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-all ${status === st ? st === "present" ? "bg-emerald-600 text-white font-semibold" : st === "late" ? "bg-slate-500 text-white font-semibold" : "bg-rose-600 text-white font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"} ${changed ? "ring-1 ring-teal-500" : ""}`}>{st}</button>
+          <button key={st} type="button" onClick={() => onStatus(st)} className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-all ${status === st ? st === "present" ? "bg-emerald-600 text-white font-semibold" : st === "late" ? "bg-slate-500 text-white font-semibold" : "bg-rose text-white font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"} ${changed ? "ring-1 ring-teal" : ""}`}>{st}</button>
         ))}
       </div>
     </div>
