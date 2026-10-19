@@ -90,6 +90,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
+        <QuickSearch items={items} />
         <nav className="space-y-0.5 flex-1 overflow-y-auto">
           {items.map((item) => {
             const active =
@@ -120,6 +121,70 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 p-4 md:p-6 md:pl-2 space-y-6 overflow-y-auto pt-20 md:pt-0">
         {children}
       </main>
+    </div>
+  );
+}
+
+function QuickSearch({ items }: { items: { label: string; icon: string; href: string }[] }) {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const matches = q
+    ? items.filter((i) => i.label.toLowerCase().includes(q.trim().toLowerCase()))
+    : [];
+
+  function go(href: string) {
+    router.push(href);
+    setQ("");
+    setOpen(false);
+  }
+
+  // Close the dropdown when clicking anywhere outside it
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  return (
+    <div ref={ref} className="px-1 mb-3 relative">
+      <div className="flex items-center gap-2 rounded-lg bg-white/10 border border-white/15 px-3 py-2">
+        <span className="material-symbols-outlined text-lg text-teal-100">search</span>
+        <input
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && matches[0]) go(matches[0].href);
+            if (e.key === "Escape") { setQ(""); setOpen(false); }
+          }}
+          placeholder="Search pages…"
+          aria-label="Search dashboard pages"
+          className="bg-transparent text-sm text-white placeholder:text-teal-100/70 outline-none w-full"
+        />
+        {q && (
+          <button type="button" onClick={() => { setQ(""); setOpen(false); }} aria-label="Clear search" className="text-teal-100 hover:text-white">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        )}
+      </div>
+      {open && q && (
+        <div className="absolute left-0 right-0 mt-1 rounded-lg bg-white border border-slate-200 shadow-lg overflow-y-auto max-h-64 z-50">
+          {matches.length === 0 ? (
+            <p className="px-3 py-2.5 text-xs text-slate-500">No matching pages</p>
+          ) : (
+            matches.map((m) => (
+              <button key={m.href} type="button" onClick={() => go(m.href)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-on-surface hover:bg-primary-light text-left">
+                <span className="material-symbols-outlined text-lg text-primary">{m.icon}</span>
+                {m.label}
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
