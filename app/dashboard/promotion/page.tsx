@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   listStudents,
   listClasses,
+  listGraduatedStudents,
   promoteStudent,
+  promoteClass,
   listPromotionHistory,
 } from "@/lib/data";
 import type { Student, Class, PromotionRecord } from "@/lib/data";
@@ -14,6 +16,7 @@ import { Card, Button, Select, StatusPill, Alert, EmptyState } from "@/component
 export default function PromotionPage() {
   const scope = useTeacherScope();
   const [students, setStudents] = useState<Student[]>([]);
+  const [graduated, setGraduated] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [history, setHistory] = useState<PromotionRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,20 +26,28 @@ export default function PromotionPage() {
   const [destClass, setDestClass] = useState("");
   const [academicYear, setAcademicYear] = useState("2026 - 2027");
   const [saving, setSaving] = useState(false);
+  const [bulkFrom, setBulkFrom] = useState("");
+  const [bulkTo, setBulkTo] = useState("");
+  const [bulkYear, setBulkYear] = useState("2026 - 2027");
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [yearFilter, setYearFilter] = useState("");
+  const [classFilter, setClassFilter] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [s, c, h] = await Promise.all([
+        const [s, c, h, g] = await Promise.all([
           listStudents(),
           listClasses(),
           listPromotionHistory(),
+          listGraduatedStudents(),
         ]);
         if (cancelled) return;
         setStudents(s);
         setClasses(c);
         setHistory(h);
+        setGraduated(g);
         setError("");
       } catch (e) {
         setError((e as Error).message);
@@ -106,6 +117,64 @@ export default function PromotionPage() {
     }
   }
 
+  // Whole-class promotion: active students of source class, not yet promoted this session
+  const bulkCount = useMemo(
+    () =>
+      bulkFrom
+        ? students.filter(
+            (s) => s.class_id === bulkFrom && !history.some((h) => h.student_id === s.id && h.academic_year === bulkYear)
+          ).length
+        : 0,
+    [students, history, bulkFrom, bulkYear]
+  );
+
+  async function onBulkPromote(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!bulkFrom || !bulkTo || !bulkYear) {
+      setError("Please select the class, destination class, and academic year.");
+      return;
+    }
+    if (bulkFrom === bulkTo) {
+      setError("Destination class must be different from the source class.");
+      return;
+    }
+    setBulkSaving(true);
+    try {
+      const res = await promoteClass(bulkFrom, bulkTo, bulkYear, scope.email ?? "admin");
+      setSuccess(
+        `Promoted ${res.promoted} of ${res.total} students` +
+          (res.skipped ? ` (${res.skipped} already promoted this session)` : "") +
+          `.`
+      );
+      setBulkFrom("");
+      setBulkTo("");
+      const [s, h] = await Promise.all([listStudents(), listPromotionHistory()]);
+      setStudents(s);
+      setHistory(h);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  // History filters: by academic session and by class involved (from or to)
+  const years = useMemo(
+    () => Array.from(new Set(history.map((h) => h.academic_year))).sort().reverse(),
+    [history]
+  );
+  const visibleHistory = useMemo(
+    () =>
+      history.filter(
+        (h) =>
+          (!yearFilter || h.academic_year === yearFilter) &&
+          (!classFilter || h.from_class_id === classFilter || h.to_class_id === classFilter)
+      ),
+    [history, yearFilter, classFilter]
+  );
+
   if (loading) {
     return (
       <Card className="p-8 text-center text-sm text-slate-500">
@@ -172,6 +241,49 @@ export default function PromotionPage() {
         </form>
       </Card>
 
+      <Card className="p-4">
+        <h2 className="font-semibold text-slate-900 mb-1 text-sm">Promote Entire Class</h2>
+        <p className="text-xs text-slate-500 mb-4">
+          Moves every active student of the class in one go. Students already promoted this session are skipped.
+        </p>
+        <form onSubmit={onBulkPromote} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-600">Class *</label>
+            <Select
+              value={bulkFrom}
+              onChange={(e) => { setBulkFrom(e.target.value); setBulkTo(""); }}
+            >
+              <option value="">Select class…</option>
+              {destOptions.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </Select>
+            <p className="text-xs text-slate-500">
+              {bulkFrom ? `${bulkCount} student${bulkCount !== 1 ? "s" : ""} to promote this session` : "—"}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-600">Destination Class *</label>
+            <Select value={bulkTo} onChange={(e) => setBulkTo(e.target.value)}>
+              <option value="">Select class…</option>
+              {(classes.find((c) => c.id === bulkFrom) ? destOptions.filter((o) => o.id !== bulkFrom) : destOptions).map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-600">Academic Year *</label>
+            <Select value={bulkYear} onChange={(e) => setBulkYear(e.target.value)}>
+              <option value="2026 - 2027">2026 - 2027</option>
+              <option value="2027 - 2028">2027 - 2028</option>
+            </Select>
+          </div>
+          <Button type="submit" disabled={bulkSaving || !bulkFrom || !bulkTo || bulkCount === 0}>
+            {bulkSaving ? "Promoting…" : "Promote Class"}
+          </Button>
+        </form>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-4">
           <h2 className="font-semibold text-slate-900 mb-4 text-sm">Current Students</h2>
@@ -213,19 +325,35 @@ export default function PromotionPage() {
 
         <Card className="lg:col-span-1 p-4">
           <h2 className="font-semibold text-slate-900 mb-4 text-sm">Promotion History</h2>
-          {history.length === 0 && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} aria-label="Filter by academic year">
+              <option value="">All sessions</option>
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </Select>
+            <Select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} aria-label="Filter by class">
+              <option value="">All classes</option>
+              {destOptions.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </Select>
+          </div>
+          {visibleHistory.length === 0 && (
             <p className="text-sm text-slate-500 text-center py-6">
-              No promotions recorded yet.
+              {history.length === 0 ? "No promotions recorded yet." : "No promotions match the filters."}
             </p>
           )}
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {history.map((h) => {
-              const st = students.find((s) => s.id === h.student_id);
+            {visibleHistory.map((h) => {
+              // Names come from the record snapshot; fall back to active/passed-out lookups for old entries
+              const st = students.find((s) => s.id === h.student_id) ?? graduated.find((s) => s.id === h.student_id);
+              const name = h.student_name ?? st?.name ?? h.student_id;
               const fromCls = classes.find((c) => c.id === h.from_class_id);
               const toCls = classes.find((c) => c.id === h.to_class_id);
               return (
                 <div key={h.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50">
-                  <p className="text-sm font-medium text-slate-900">{st?.name ?? h.student_id}</p>
+                  <p className="text-sm font-medium text-slate-900">{name}</p>
                   <p className="text-xs text-slate-500 mt-1">
                     {fromCls ? `${fromCls.name} ${fromCls.section}` : h.from_class_id} →{" "}
                     {toCls ? `${toCls.name} ${toCls.section}` : h.to_class_id}

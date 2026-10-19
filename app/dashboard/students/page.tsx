@@ -5,8 +5,11 @@ import Link from "next/link";
 import {
   listStudents,
   listArchivedStudents,
+  listGraduatedStudents,
   archiveStudent,
   restoreStudent,
+  graduateStudent,
+  restoreGraduate,
   classNames,
 } from "@/lib/data";
 import { Button, Card, Modal, StatusPill, Alert } from "@/components/ui";
@@ -16,23 +19,26 @@ export default function StudentsPage() {
   const scope = useTeacherScope();
   const [students, setStudents] = useState<Awaited<ReturnType<typeof listStudents>>>([]);
   const [archived, setArchived] = useState<Awaited<ReturnType<typeof listArchivedStudents>>>([]);
+  const [graduated, setGraduated] = useState<Awaited<ReturnType<typeof listGraduatedStudents>>>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"active" | "archived">("active");
+  const [tab, setTab] = useState<"active" | "graduated" | "archived">("active");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [archiveMode, setArchiveMode] = useState<"archive" | "restore" | null>(null);
+  const [mode, setMode] = useState<"archive" | "restore" | "passout" | "passout-restore" | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   async function load() {
     try {
-      const [s, a, c] = await Promise.all([
+      const [s, a, g, c] = await Promise.all([
         listStudents(),
         listArchivedStudents(),
+        listGraduatedStudents(),
         classNames(),
       ]);
       setStudents(s);
       setArchived(a);
+      setGraduated(g);
       setNames(c);
       setError("");
     } catch (e) {
@@ -46,7 +52,7 @@ export default function StudentsPage() {
     load();
   }, []);
 
-  const list = tab === "active" ? students : archived;
+  const list = tab === "active" ? students : tab === "graduated" ? graduated : archived;
 
   const visible = useMemo(
     () =>
@@ -67,16 +73,15 @@ export default function StudentsPage() {
     );
   }, [visible, q]);
 
-  async function onArchive() {
+  async function onAction() {
     if (!activeId) return;
     try {
-      if (archiveMode === "archive") {
-        await archiveStudent(activeId);
-      } else {
-        await restoreStudent(activeId);
-      }
+      if (mode === "archive") await archiveStudent(activeId);
+      else if (mode === "restore") await restoreStudent(activeId);
+      else if (mode === "passout") await graduateStudent(activeId);
+      else if (mode === "passout-restore") await restoreGraduate(activeId);
       setActiveId(null);
-      setArchiveMode(null);
+      setMode(null);
       load();
     } catch (e) {
       setError((e as Error).message);
@@ -103,7 +108,9 @@ export default function StudentsPage() {
           <p className="text-sm text-slate-500">
             {tab === "active"
               ? `${filtered.length} active student${filtered.length !== 1 ? "s" : ""}`
-              : `${filtered.length} archived student${filtered.length !== 1 ? "s" : ""}`}
+              : tab === "graduated"
+                ? `${filtered.length} passed-out record${filtered.length !== 1 ? "s" : ""}`
+                : `${filtered.length} archived student${filtered.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         {tab === "active" && scope.isAdmin && (
@@ -124,6 +131,15 @@ export default function StudentsPage() {
         >
           Active
         </Button>
+        {scope.isAdmin && (
+          <Button
+            variant="ghost"
+            onClick={() => setTab("graduated")}
+            className={tab === "graduated" ? "bg-teal-50 text-teal-700" : ""}
+          >
+            Passed Out
+          </Button>
+        )}
         {scope.isAdmin && (
           <Button
             variant="ghost"
@@ -159,7 +175,9 @@ export default function StudentsPage() {
               : list.length === 0
                 ? tab === "active"
                   ? "No students yet. Click “Add Student” to create one."
-                  : "No archived students."
+                  : tab === "graduated"
+                    ? "No passed-out records yet. Mark students from the Active tab."
+                    : "No archived students."
                 : "No students match your search."}
           </p>
         ) : (
@@ -204,12 +222,22 @@ export default function StudentsPage() {
                           <span className="material-symbols-outlined text-lg">visibility</span>
                         </Link>
                         {tab === "active" && scope.isAdmin && (
-                          <button onClick={() => { setActiveId(s.id); setArchiveMode("archive"); }} aria-label={`Archive ${s.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-slate-200">
-                            <span className="material-symbols-outlined text-lg">archive</span>
+                          <>
+                            <button onClick={() => { setActiveId(s.id); setMode("passout"); }} aria-label={`Mark ${s.name} as passed out`} title="Mark as passed out" className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-colors border border-slate-200">
+                              <span className="material-symbols-outlined text-lg">school</span>
+                            </button>
+                            <button onClick={() => { setActiveId(s.id); setMode("archive"); }} aria-label={`Archive ${s.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-slate-200">
+                              <span className="material-symbols-outlined text-lg">archive</span>
+                            </button>
+                          </>
+                        )}
+                        {tab === "graduated" && scope.isAdmin && (
+                          <button onClick={() => { setActiveId(s.id); setMode("passout-restore"); }} aria-label={`Return ${s.name} to active`} title="Return to active" className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-slate-200">
+                            <span className="material-symbols-outlined text-lg">undo</span>
                           </button>
                         )}
                         {tab === "archived" && scope.isAdmin && (
-                          <button onClick={() => { setActiveId(s.id); setArchiveMode("restore"); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-slate-200" aria-label="Restore">
+                          <button onClick={() => { setActiveId(s.id); setMode("restore"); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-slate-200" aria-label="Restore">
                             <span className="material-symbols-outlined text-lg">restore</span>
                           </button>
                         )}
@@ -225,20 +253,41 @@ export default function StudentsPage() {
 
       <Modal
         open={!!activeId}
-        onClose={() => { setActiveId(null); setArchiveMode(null); }}
-        title={archiveMode === "archive" ? "Archive student?" : "Restore student?"}
+        onClose={() => { setActiveId(null); setMode(null); }}
+        title={
+          mode === "archive"
+            ? "Archive student?"
+            : mode === "passout"
+              ? "Mark as passed out?"
+              : mode === "passout-restore"
+                ? "Return to active?"
+                : "Restore student?"
+        }
       >
         <p className="text-sm text-slate-700 mb-6">
-          {archiveMode === "archive"
+          {mode === "archive"
             ? "This will archive the student. Archived students are hidden from active lists but their records are preserved. This can be undone."
-            : "This will restore the student to the active roster."}
+            : mode === "passout"
+              ? "This will move the student to the Passed Out records with their full history preserved. You can return them to Active at any time."
+              : mode === "passout-restore"
+                ? "This will return the student to the active roster in their current class."
+                : "This will restore the student to the active roster."}
         </p>
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => { setActiveId(null); setArchiveMode(null); }}>
+          <Button variant="ghost" onClick={() => { setActiveId(null); setMode(null); }}>
             Cancel
           </Button>
-          <Button variant={archiveMode === "archive" ? "danger" : "primary"} onClick={onArchive}>
-            {archiveMode === "archive" ? "Archive" : "Restore"}
+          <Button
+            variant={mode === "archive" ? "danger" : mode === "passout" ? "primary" : "primary"}
+            onClick={onAction}
+          >
+            {mode === "archive"
+              ? "Archive"
+              : mode === "passout"
+                ? "Mark Passed Out"
+                : mode === "passout-restore"
+                  ? "Return to Active"
+                  : "Restore"}
           </Button>
         </div>
       </Modal>

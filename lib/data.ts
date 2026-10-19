@@ -36,6 +36,9 @@ export type Student = {
   photo_url?: string;
   archived?: boolean;
   archivedAt?: string;
+  /** Passed out (graduated) students keep a full record, excluded from active rosters. */
+  graduated?: boolean;
+  graduatedAt?: string;
   createdAt?: unknown;
 };
 
@@ -196,6 +199,8 @@ export type UserRole = "Admin" | "Teacher" | "Student" | "Parent";
 export type PromotionRecord = {
   id: string;
   student_id: string;
+  /** Name snapshot at promotion time (lookup fallback for old records). */
+  student_name?: string;
   from_class_id: string;
   to_class_id: string;
   academic_year: string;
@@ -647,9 +652,17 @@ export async function listStudents({ includeArchived = false }: { includeArchive
   const snap = await getDocs(q);
   let students = snap.docs.map((d) => ({ ...(d.data() as Student), id: d.id }));
   if (!includeArchived) {
-    students = students.filter((s) => !s.archived);
+    students = students.filter((s) => !s.archived && !s.graduated);
   }
   return students;
+}
+
+export async function listGraduatedStudents(): Promise<Student[]> {
+  const q = query(col.students(), orderBy("name"));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map((d) => ({ ...(d.data() as Student), id: d.id }))
+    .filter((s) => s.graduated);
 }
 
 export async function listArchivedStudents(): Promise<Student[]> {
@@ -717,6 +730,22 @@ export async function restoreStudent(id: string) {
   });
 }
 
+/** Mark a student as passed out (graduated). Record is fully preserved. */
+export async function graduateStudent(id: string) {
+  await updateDoc(doc(db!, "students", id), {
+    graduated: true,
+    graduatedAt: new Date().toISOString(),
+  });
+}
+
+/** Return a passed-out student to the active roster. */
+export async function restoreGraduate(id: string) {
+  await updateDoc(doc(db!, "students", id), {
+    graduated: false,
+    graduatedAt: deleteField(),
+  });
+}
+
 /** Hard delete — use only for true data cleanup, not archival. */
 export async function deleteStudent(id: string) {
   await deleteDoc(doc(db!, "students", id));
@@ -749,6 +778,7 @@ export async function promoteStudent(
   const revRef = doc(col.promotion_history());
   batch.set(revRef, {
     student_id: studentId,
+    student_name: student.name,
     from_class_id: student.class_id,
     to_class_id: toClassId,
     academic_year: academicYear,
@@ -757,6 +787,50 @@ export async function promoteStudent(
   });
 
   await batch.commit();
+}
+
+/**
+ * Promote every active student of a class in one batch. Students already
+ * promoted this academic year (e.g. individually) are skipped, not failed.
+ * ponytail: single batch (500-op Firestore cap ≈ 250 students) — plenty for a class roster.
+ */
+export async function promoteClass(
+  fromClassId: string,
+  toClassId: string,
+  academicYear: string,
+  promotedBy: string
+): Promise<{ promoted: number; skipped: number; total: number }> {
+  if (fromClassId === toClassId) {
+    throw new Error("Destination class must be different from the source class.");
+  }
+  const roster = await studentsInClass(fromClassId);
+  if (roster.length === 0) {
+    throw new Error("No students found in the source class.");
+  }
+  const history = await listPromotionHistory();
+  const batch = writeBatch(db!);
+  const promotedAt = new Date().toISOString();
+  let promoted = 0;
+  let skipped = 0;
+  for (const s of roster) {
+    if (history.some((h) => h.student_id === s.id && h.academic_year === academicYear)) {
+      skipped++;
+      continue;
+    }
+    batch.update(doc(db!, "students", s.id), { class_id: toClassId });
+    batch.set(doc(col.promotion_history()), {
+      student_id: s.id,
+      student_name: s.name,
+      from_class_id: fromClassId,
+      to_class_id: toClassId,
+      academic_year: academicYear,
+      promoted_by: promotedBy,
+      promoted_at: promotedAt,
+    });
+    promoted++;
+  }
+  if (promoted > 0) await batch.commit();
+  return { promoted, skipped, total: roster.length };
 }
 
 export async function listPromotionHistory(): Promise<PromotionRecord[]> {
