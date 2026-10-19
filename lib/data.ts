@@ -1810,6 +1810,18 @@ export async function saveTimetableConfig(cfg: TimetableConfig) {
   await setDoc(doc(db!, "settings", "timetable"), cfg);
 }
 
+/** Admin Settings page configuration (one settings doc, one slice per tab). */
+export type AdminSettingsConfig = Record<string, Record<string, unknown>>;
+
+export async function getAdminSettings(): Promise<AdminSettingsConfig> {
+  const snap = await getDoc(doc(db!, "settings", "admin_settings"));
+  return snap.exists() ? ((snap.data() as AdminSettingsConfig)) : {};
+}
+
+export async function saveAdminSettings(tab: string, data: Record<string, unknown>) {
+  await setDoc(doc(db!, "settings", "admin_settings"), { [tab]: data }, { merge: true });
+}
+
 /** List all books in the catalog, ordered by title. */
 export async function listBooks(): Promise<Book[]> {
   const q = query(col.books(), orderBy("title"));

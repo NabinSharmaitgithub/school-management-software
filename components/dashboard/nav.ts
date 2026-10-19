@@ -23,6 +23,7 @@ export const NAV_ITEMS = [
   { label: "Analytics", icon: "query_stats", href: "/dashboard/analytics" },
   { label: "Settings", icon: "settings", href: "/dashboard/settings" },
   { label: "My Account", icon: "person", href: "/dashboard/my-account" },
+  { label: "Admin Settings", icon: "admin_panel_settings", href: "/dashboard/admin-settings" },
 ];
 
 const ADMIN_ONLY = [
@@ -38,6 +39,7 @@ const ADMIN_ONLY = [
   "/dashboard/report-cards",
   "/dashboard/analytics",
   "/dashboard/settings",
+  "/dashboard/admin-settings",
 ];
 
 const TEACHER_ONLY = ["/dashboard/my-class", "/dashboard/my-attendance"];
