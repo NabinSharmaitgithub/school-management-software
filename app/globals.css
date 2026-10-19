@@ -20,8 +20,9 @@
     /* rgb channels for inline alpha (Ripple ring color in the sign-in blocks) */
     --rgb-foreground: 15 23 42;
     /* Chart series colors (shadcn chart wrapper) */
-    --chart-1: #14b8a6;   /* Present % — teal  */
-    --chart-2: #ef4444;   /* Absent %  — red   */
+    --chart-1: #14b8a6;   /* Present — teal  */
+    --chart-2: #ef4444;   /* Absent  — red   */
+    --chart-3: #f59e0b;   /* Late    — amber */
     /* Google button border token */
     --btn-border: hsl(214, 32%, 91%);
   }

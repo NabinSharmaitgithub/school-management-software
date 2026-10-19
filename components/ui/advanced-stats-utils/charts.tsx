@@ -16,10 +16,11 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-type TrendPoint = { label: string; present: number; absent: number };
+type TrendPoint = { label: string; present: number; late: number; absent: number };
 
 const chartConfig = {
   present: { label: 'Present', color: 'var(--chart-1)' },
+  late: { label: 'Late', color: 'var(--chart-3)' },
   absent: { label: 'Absent', color: 'var(--chart-2)' },
 } satisfies ChartConfig;
 
@@ -32,7 +33,7 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
     return () => clearTimeout(timeout);
   }, []);
 
-  const rows = data.length ? data : [{ label: '', present: 0, absent: 0 }];
+  const rows = data.length ? data : [{ label: '', present: 0, late: 0, absent: 0 }];
   // Average present per day, counted only over days with a recorded register
   const recorded = rows.filter((r) => r.present || r.absent);
   const avg = recorded.length
@@ -81,6 +82,18 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
                   stopOpacity={0}
                 />
               </linearGradient>
+              <linearGradient id={`${gradientId}-late`} x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-late)"
+                  stopOpacity={0.25}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-late)"
+                  stopOpacity={0}
+                />
+              </linearGradient>
               <linearGradient id={`${gradientId}-absent`} x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
@@ -118,6 +131,16 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
               type="natural"
               fill={`url(#${gradientId}-absent)`}
               stroke="var(--color-absent)"
+              strokeWidth={2}
+              stackId="a"
+              isAnimationActive={false}
+            />
+            <Area
+              dataKey="late"
+              name="late"
+              type="natural"
+              fill={`url(#${gradientId}-late)`}
+              stroke="var(--color-late)"
               strokeWidth={2}
               stackId="a"
               isAnimationActive={false}
