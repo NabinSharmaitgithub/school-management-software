@@ -6,7 +6,7 @@
  * ({ label, pct }[]), rendered in the teal design palette.
  */
 import * as React from 'react';
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartConfig,
   ChartContainer,
@@ -95,6 +95,12 @@ export function ClippedAreaChart({ data }: { data: TrendPoint[] }) {
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={34}
+              allowDecimals={false}
+            />
             <XAxis
               dataKey="label"
               tickLine={false}
