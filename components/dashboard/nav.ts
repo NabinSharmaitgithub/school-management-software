@@ -22,6 +22,7 @@ export const NAV_ITEMS = [
   { label: "Promotion", icon: "trending_up", href: "/dashboard/promotion" },
   { label: "Analytics", icon: "query_stats", href: "/dashboard/analytics" },
   { label: "Settings", icon: "settings", href: "/dashboard/settings" },
+  { label: "My Account", icon: "person", href: "/dashboard/my-account" },
 ];
 
 const ADMIN_ONLY = [
@@ -41,12 +42,14 @@ const ADMIN_ONLY = [
 
 const TEACHER_ONLY = ["/dashboard/my-class", "/dashboard/my-attendance"];
 const STUDENT_ONLY = ["/dashboard/my-fees"];
+/** Pages every signed-in role may access (account pages). */
+const EVERYONE = ["/dashboard", "/dashboard/my-account"];
 export type NavRole = "Admin" | "Teacher" | "Student" | "Parent" | null;
 
 export function navItemsFor(role: NavRole) {
   if (role === "Teacher") return NAV_ITEMS.filter((i) => !ADMIN_ONLY.includes(i.href));
   if (role === "Student" || role === "Parent")
-    return NAV_ITEMS.filter((i) => i.href === "/dashboard" || STUDENT_ONLY.includes(i.href));
+    return NAV_ITEMS.filter((i) => EVERYONE.includes(i.href) || STUDENT_ONLY.includes(i.href));
   return NAV_ITEMS.filter((i) => !TEACHER_ONLY.includes(i.href) && !STUDENT_ONLY.includes(i.href));
 }
 
@@ -54,6 +57,6 @@ export function isRestrictedFor(role: NavRole, pathname: string) {
   const blocked = (list: string[]) => list.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (role === "Teacher") return blocked(ADMIN_ONLY);
   if (role === "Student" || role === "Parent")
-    return pathname !== "/dashboard" && !blocked(STUDENT_ONLY);
+    return !blocked(EVERYONE) && !blocked(STUDENT_ONLY);
   return blocked([...TEACHER_ONLY, ...STUDENT_ONLY]);
 }
